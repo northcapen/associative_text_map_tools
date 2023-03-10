@@ -1,11 +1,11 @@
 
-from bs4 import BeautifulSoup
 
 import xml.etree.ElementTree as ET
-from io import StringIO
 
 
 def links(content):
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(content.replace('en-note', 'html').replace('\xa0', ''), "html.parser")
     for div in soup.find_all('div'):
         names = [c.name for c in div.children]
@@ -18,12 +18,18 @@ def links(content):
 
 def fix_link_names(note, notes):
     root = ET.fromstring(note)
-    if root.text:
+    if root.text and root.text.strip():
         root = ET.fromstring(root.text.strip())
 
     for a in root.findall('div/a'):
         href = a.attrib['href']
-        target_note_id = href.split('/')[-2]
+        href_components = href.split('/')
+        if len(href_components) <= 2:
+            print(href)
+            continue
+
+        target_note_id = href_components[-2]
+
         if target_note_id in notes:
             a.text = notes[target_note_id]
 
