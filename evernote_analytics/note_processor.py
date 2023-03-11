@@ -18,11 +18,13 @@ import sqlite3
 import pandas as pd
 
 # Create your connection.
-cnx = sqlite3.connect('/Users/antonvoskobovich/Documents/Life mapping/en_backup.db')
+cnx = sqlite3.connect('en_backup.db')
 cnx.row_factory = sqlite3.Row
 
-out_db = sqlite3.connect('/Users/antonvoskobovich/Documents/Life mapping/out.db')
-out_db.row_factory = sqlite3.Row
+import db
+out_db = sqlite3.connect('out.db')
+
+
 
 mostly_articles_notebooks = ['Life Mapping External', 'Articles Archive', 'IT Articles', 'Articles', 'ML Articles']
 
@@ -42,15 +44,8 @@ def db_processor():
     # notes_filtered = [row for row in notes if row['guid'] not in black_list_notes][0:100]
 
     notes = NoteStorage(cnx).iter_notes("8644f8b3-8565-43a3-95d8-f6fd7d9f8f21")
-    out_db.execute(
-        """CREATE TABLE notes(
-                        guid TEXT PRIMARY KEY,
-                        title TEXT,
-                        notebook_guid TEXT,
-                        is_active BOOLEAN,
-                        raw_note BLOB
-                    )
-    """)
+
+
 
     for n in tqdm(notes):
         try:
