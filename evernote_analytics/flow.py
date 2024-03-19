@@ -35,8 +35,8 @@ def db_to_parquet(folder):
 def evernote_to_obsidian_flow():
     folder = '.'
     #correct_links(db=OUT_DB)
-    enex = export_enex(OUT_DB, folder)
-    yarle(folder, enex)
+    export_enex(OUT_DB, folder)
+    yarle(folder, enex=None)
     db_to_parquet(folder)
 
 if __name__ == '__main__':

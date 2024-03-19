@@ -1,4 +1,4 @@
-from evernote_analytics.notes import fix_link_names
+from evernote_analytics.link_corrector import fix_link_names
 
 
 def test_fix_links():

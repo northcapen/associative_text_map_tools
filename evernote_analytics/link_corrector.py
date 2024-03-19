@@ -1,3 +1,4 @@
+# noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from evernote_backup.note_storage import NoteStorage
 
