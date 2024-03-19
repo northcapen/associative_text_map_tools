@@ -1,7 +1,23 @@
-
-
 import xml.etree.ElementTree as ET
+from evernote_backup.note_storage import NoteStorage
 
+from notes_service import deep_notes_iterator
+
+
+def process_incorrect_links(cnx):
+    out_storage = NoteStorage(cnx)
+
+    for i, n in enumerate(deep_notes_iterator(cnx)):
+        print(i, n)
+        if i >= 100:
+            break
+
+        try:
+            n.content = fix_link_names(n.content, {})
+            out_storage.add_note(n)
+        except Exception as e:
+            print(n.title)
+            print(e)
 
 def links(content):
     from bs4 import BeautifulSoup

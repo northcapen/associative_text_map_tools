@@ -1,0 +1,83 @@
+{
+    "enexSources": [
+        "data/export2/Debug.enex"
+    ],
+    "outputDir": "data/export2",
+    "keepOriginalHtml": false,
+    "isMetadataNeeded": true,
+    "isNotebookNameNeeded": false,
+    "isZettelkastenNeeded": false,
+    "useZettelIdAsFilename": false,
+    "plainTextNotesOnly": false,
+    "skipWebClips": true,
+    "useHashTags": true,
+    "trimStartingTabs": false,
+    "convertPlainHtmlNewlines": false,
+    "encryptionPasswords": [
+        ""
+    ],
+    "nestedTags": {
+        "separatorInEN": "_",
+        "replaceSeparatorWith": "---",
+        "replaceSpaceWith": "-"
+    },
+    "outputFormat": "ObsidianMD",
+    "taskOutputFormat": "ObsidianMD",
+    "obsidianTaskTag": "",
+    "urlEncodeFileNamesAndLinks": false,
+    "sanitizeResourceNameSpaces": false,
+    "replacementChar": "_",
+    "replacementCharacterMap": {
+        "<": "_",
+        ">": "_",
+        ":": "_",
+        "\"": "_",
+        "/": "_",
+        "\\": "_",
+        "|": "_",
+        "?": "_",
+        "*": "_"
+    },
+    "globalReplacementSettings": [
+        {
+            "type": "title",
+            "regex": "",
+            "replace": ""
+        },
+        {
+            "type": "content",
+            "regex": "",
+            "replace": ""
+        }
+    ],
+    "pathSeparator": "/",
+    "resourcesDir": "_resources",
+    "turndownOptions": {
+        "headingStyle": "atx"
+    },
+    "skipLocation": true,
+    "skipCreationTime": false,
+    "skipUpdateTime": false,
+    "skipSourceUrl": false,
+    "skipTags": false,
+    "skipEnexFileNameFromOutputPath": false,
+    "keepMDCharactersOfENNotes": false,
+    "monospaceIsCodeBlock": false,
+    "currentTemplate": "---\n\n{created-at-block}Created at: {created-at}{end-created-at-block}\n{updated-at-block}Last updated at: {updated-at}{end-updated-at-block}\n{source-url-block}Source URL: {source-url}{end-source-url-block}\n{tags-block}tags: {tags}{end-tags-block}\n\n---\n\n{title-block}# {title}{end-title-block}\n\n\n{content-block}{content}{end-content-block}\n\n",
+    "logseqSettings": {
+        "journalNotes": false
+    },
+    "obsidianSettings": {
+        "omitLinkDisplayName": false
+    },
+    "dateFormat": "YYYY-MM-DD",
+    "imageSizeFormat": "ObsidianMD",
+    "keepImageSize": true,
+    "keepOriginalAmountOfNewlines": false,
+    "haveEnexLevelResources": false,
+    "haveGlobalResources": false,
+    "useUniqueUnknownFileNames": false,
+    "useLevenshteinForLinks": false,
+    "convertColorsToMDHighlight": false,
+    "keepEvernoteLinkIfNoNoteFound": false
+}
