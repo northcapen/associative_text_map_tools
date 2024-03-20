@@ -1,8 +1,8 @@
 {
     "enexSources": [
-        "data/export2/Debug.enex"
+        "export/Debug.enex"
     ],
-    "outputDir": "data/export2",
+    "outputDir": "md",
     "keepOriginalHtml": false,
     "isMetadataNeeded": true,
     "isNotebookNameNeeded": false,
