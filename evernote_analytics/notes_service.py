@@ -15,7 +15,6 @@ def read_notes(cnx):
     sql = f"""select n.guid, title, raw_note, n.name notebook, stack, notebook_guid
     from notes join notebooks n on notes.notebook_guid = n.guid
     where name not in ({iterable_to_sql_in(mostly_articles_notebooks)})
-    limit 10
     """
     cur = cnx.execute(sql)
     result = cur.fetchall()

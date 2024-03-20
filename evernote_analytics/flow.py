@@ -35,7 +35,7 @@ def db_to_parquet(context_dir):
 
 @flow
 def evernote_to_obsidian_flow():
-    context_dir = 'small'
+    context_dir = 'full'
     #correct_links(db=OUT_DB)
     export_enex(OUT_DB, context_dir)
     yarle(context_dir, enex=None)
