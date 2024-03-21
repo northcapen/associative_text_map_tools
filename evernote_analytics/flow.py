@@ -1,5 +1,4 @@
-
-from prefect import flow, task
+from prefect import flow, task, serve
 
 from prefect_shell import ShellOperation
 
@@ -34,12 +33,17 @@ def db_to_parquet(context_dir):
     df.to_parquet(f'{context_dir}/raw_notes')
 
 @flow
-def evernote_to_obsidian_flow():
-    context_dir = 'full'
+def evernote_to_obsidian_flow(context_dir):
     #correct_links(db=OUT_DB)
     export_enex(OUT_DB, context_dir)
     yarle(context_dir, enex=None)
     db_to_parquet(context_dir)
 
 if __name__ == '__main__':
-    evernote_to_obsidian_flow.serve('evernote-to-obsidian-flow')
+    full = evernote_to_obsidian_flow.to_deployment(
+        'evernote-to-obsidian-flow', parameters={'context_dir' : 'full'}
+    )
+    small = evernote_to_obsidian_flow.to_deployment(
+        'evernote-to-obsidian-flow-small', parameters={'context_dir' : 'small'}
+    )
+    serve(full, small)
