@@ -1,5 +1,8 @@
+from typing import Iterable
+
 import lzma
 import pickle
+from evernote.edam.type.ttypes import Note
 
 from evernote_backup.note_storage import NoteStorage, NoteBookStorage
 
@@ -48,7 +51,7 @@ def read_notebooks(cnx):
 
 
 
-def deep_notes_iterator(cnx):
+def deep_notes_iterator(cnx) -> Iterable[Note]:
     in_storage = NoteStorage(cnx)
     in_nb_storage = NoteBookStorage(cnx)
 

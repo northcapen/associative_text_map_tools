@@ -6,15 +6,14 @@ from notes_service import read_notes
 from utils import as_sqllite
 
 OUT_DB = 'en_backup.db'
-OUT_DB_CORR = 'en_small_corr.db'
+OUT_DB_CORR = 'en_backup_corr.db'
 
 @task
-def correct_links(db):
-    pass
-    # #from link_corrector import process_incorrect_links
-    #
-    # ShellOperation(commands=[f'cp {db} {OUT_DB_CORR}']).run()
-    # process_incorrect_links(as_sqllite(OUT_DB_CORR))
+def correct_links(db, context_dir):
+    from link_corrector import process_incorrect_links
+
+    ShellOperation(commands=[f'cd {context_dir} && cp {db} {OUT_DB_CORR}']).run()
+    process_incorrect_links(as_sqllite(context_dir + '/' + OUT_DB_CORR))
 
 @task
 def export_enex(db, context_dir):
@@ -34,8 +33,8 @@ def db_to_parquet(context_dir):
 
 @flow
 def evernote_to_obsidian_flow(context_dir):
-    #correct_links(db=OUT_DB)
-    export_enex(OUT_DB, context_dir)
+    correct_links(db=OUT_DB, context_dir=context_dir)
+    export_enex(OUT_DB_CORR, context_dir)
     yarle(context_dir, enex=None)
     db_to_parquet(context_dir)
 
