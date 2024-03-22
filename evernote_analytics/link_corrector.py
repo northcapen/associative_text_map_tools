@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from typing import Callable, Optional, List
 
 import logging
@@ -70,7 +72,7 @@ class LinkFixer:
                 logger.error(f'Processing note {note.title}, link {a.text} not found')
                 success = False
 
-            x = {'from' : note.title, 'to_old' : old_name, 'to_new' : new_name, 'success' : success}
+            x = {'from' : note.title, 'to_old' : old_name, 'to_new' : new_name, 'success' : success, 'ts' : datetime.now()}
             self.buffer.append(x)
 
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
