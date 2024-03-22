@@ -58,14 +58,8 @@ def fix_link_names(note_content, notes):
     for a in root.findall('div/a'):
         process_link(a, notes)
 
-    result =  str(ET.tostring(root, xml_declaration=True, encoding='UTF-8'))
-    return f"""<content>
-      <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-        <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
-        {result}
-        ]]>
-    </content>
-        """
+    result =  str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
+    return f"""{result}"""
 
 
 def process_link(a, notes):
