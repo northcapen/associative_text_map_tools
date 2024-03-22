@@ -1,4 +1,4 @@
-from evernote_analytics.link_corrector import fix_link_names, process_link
+from evernote_analytics.link_corrector import fix_link_names, canonicalize_evernote_link
 from dataclasses import dataclass
 
 import xml.etree.ElementTree as ET
@@ -23,12 +23,10 @@ def test_fix_links():
 def test_evernote_link():
     x = """<a href="evernote:///view/9214951/s86/a/b/" style="color: #69aa35;">B</a>"""
     a = ET.fromstring(x)
-    process_link(a, {'b' : Note('B_newname')})
-    assert 'B_newname' in a.text
+    assert 'B_newname' in canonicalize_evernote_link(a, {'b' : Note('B_newname')})
 
 
 def test_change_http_link():
     x = """<a href="https://www.smartsheet.com/" style="color: #69aa35;">B</a>"""
     a = ET.fromstring(x)
-    process_link(a, {'b' : Note('B_newname')})
-    assert 'B' in a.text
+    assert canonicalize_evernote_link(a, {'b' : Note('B_newname')}) is None

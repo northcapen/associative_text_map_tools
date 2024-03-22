@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 import logging
 from sqlite3 import Connection
@@ -44,18 +44,27 @@ def fix_link_names(note_content, notes):
         root = ET.fromstring(root.text.strip())
 
     for a in root.findall('div/a'):
-        process_link(a, notes)
+        new_name = canonicalize_evernote_link(a, notes)
+        if new_name:
+            a.text = new_name
 
     result =  str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
     return f"""{result}"""
 
 
-def process_link(a, notes):
+def canonicalize_evernote_link(a, notes) -> Optional[str]:
     href = a.attrib['href']
     href_components = href.split('/')
-    if len(href_components) <= 2:
+    if not href.startswith('evernote'):
         return
 
+    if len(href_components) <= 2:
+        return None
+
+    #"evernote:///view/9214951/s86/c1e7e98a-825f-4eb8-b2df-d869ed082999/c1e7e98a-825f-4eb8-b2df-d869ed082999/"
     target_note_id = href_components[-2]
     if target_note_id in notes:
-        a.text = notes[target_note_id].title
+        return notes[target_note_id].title
+    else:
+        logger.error(f'Note {a.text} not found')
+        return None
