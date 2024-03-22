@@ -21,7 +21,7 @@ def correct_links(db, context_dir):
 
 @task
 def export_enex(db, context_dir):
-    command = f"cd {context_dir} && evernote-backup export -d {db} --overwrite export/"
+    command = f"cd {context_dir} && evernote-backup export -d {db} --overwrite enex/"
     print(command)
     ShellOperation(commands=[command]).run()
 
@@ -40,7 +40,7 @@ def evernote_to_obsidian_flow(context_dir):
     correct_links(db=OUT_DB, context_dir=context_dir)
     export_enex(OUT_DB_CORR, context_dir)
     yarle(context_dir, enex=None)
-    db_to_parquet(context_dir)
+    #db_to_parquet(context_dir)
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(

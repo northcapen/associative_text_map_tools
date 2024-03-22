@@ -1,6 +1,7 @@
 {
     "enexSources": [
-        "export/Debug.enex"
+        "enex/Core/",
+        "enex/Maps/"
     ],
     "outputDir": "md",
     "keepOriginalHtml": false,

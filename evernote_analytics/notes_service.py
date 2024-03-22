@@ -1,3 +1,5 @@
+import logging
+
 from typing import Iterable, Callable
 
 import lzma
@@ -13,6 +15,15 @@ from utils import iterable_to_sql_in
 
 mostly_articles_notebooks = ['Life Mapping External', 'Articles Archive', 'IT Articles', 'Articles',
                              'ML Articles']
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('application.log')
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 
 def read_notes(cnx):
     sql = f"""select n.guid, title, raw_note, n.name notebook, stack, notebook_guid
@@ -56,7 +67,7 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[Note]:
     in_nb_storage = NoteBookStorage(cnx)
 
     for nb in list(in_nb_storage.iter_notebooks()):
-        print(f'Processing {nb.name}')
+        logger.debug(f'Processing {nb.name}')
         if condition(nb):
             for n in in_storage.iter_notes(nb.guid):
                 yield n
