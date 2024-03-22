@@ -2,7 +2,7 @@ from prefect import flow, task, serve
 
 from prefect_shell import ShellOperation
 
-from notes_service import read_notes
+from notes_service import read_notes, mostly_articles_notebooks
 from utils import as_sqllite
 
 OUT_DB = 'en_backup.db'
@@ -12,8 +12,12 @@ OUT_DB_CORR = 'en_backup_corr.db'
 def correct_links(db, context_dir):
     from link_corrector import process_incorrect_links
 
+    inclusive_filter = lambda nb: nb.name not in mostly_articles_notebooks
+    exclusive_filter = lambda nb: nb.stack in ['Core', 'Maps']
+
+
     ShellOperation(commands=[f'cd {context_dir} && cp {db} {OUT_DB_CORR}']).run()
-    process_incorrect_links(as_sqllite(context_dir + '/' + OUT_DB_CORR))
+    process_incorrect_links(as_sqllite(context_dir + '/' + OUT_DB_CORR), exclusive_filter)
 
 @task
 def export_enex(db, context_dir):

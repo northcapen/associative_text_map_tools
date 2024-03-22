@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Callable
 
 import lzma
 import pickle
@@ -51,15 +51,12 @@ def read_notebooks(cnx):
 
 
 
-def deep_notes_iterator(cnx) -> Iterable[Note]:
+def deep_notes_iterator(cnx, condition: Callable) -> Iterable[Note]:
     in_storage = NoteStorage(cnx)
     in_nb_storage = NoteBookStorage(cnx)
 
     for nb in list(in_nb_storage.iter_notebooks()):
         print(f'Processing {nb.name}')
-        if nb.name in mostly_articles_notebooks:
-            print('skipping')
-            continue
-
-        for n in in_storage.iter_notes(nb.guid):
-            yield n
+        if condition(nb):
+            for n in in_storage.iter_notes(nb.guid):
+                yield n

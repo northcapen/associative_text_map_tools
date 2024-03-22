@@ -1,24 +1,37 @@
+from typing import Callable
+
+import logging
 from sqlite3 import Connection
 
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from evernote_backup.note_storage import NoteStorage
+from tqdm import tqdm
 
-from notes_service import deep_notes_iterator
+from notes_service import deep_notes_iterator, mostly_articles_notebooks
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('application.log')
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
-def process_incorrect_links(cnx: Connection):
+def process_incorrect_links(cnx: Connection, notes_query: Callable):
     out_storage = NoteStorage(cnx)
 
-    notes = {note.guid : note for note in deep_notes_iterator(cnx)}
+    it = deep_notes_iterator(cnx, notes_query)
+    notes = {note.guid : note for note in it}
 
     counter = 0
-    for note in notes.values():
+    for note in tqdm(notes.values()):
         try:
             note.content = fix_link_names(note_content=note.content, notes=notes)
             out_storage.add_note(note)
         except Exception as e:
-            print(note.title, e)
+            logger.info(f'Failed note {note.title} with exception {e}')
             counter += 1
 
     print(f'Errors: {counter}')
