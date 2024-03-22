@@ -11,6 +11,7 @@ from tqdm import tqdm
 from notes_service import deep_notes_iterator, mostly_articles_notebooks
 
 from evernote.edam.type.ttypes import Note
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 
 logger = logging.getLogger(__name__)
@@ -31,12 +32,13 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
 
     counter = 0
     for note in tqdm(notes.values()):
-        try:
-            new_note = processor.transform(note=note)
-            out_storage.add_note(new_note)
-        except Exception as e:
-            logger.info(f'Failed note {note.title} with exception {e}')
-            counter += 1
+        with logging_redirect_tqdm():
+            try:
+                new_note = processor.transform(note=note)
+                out_storage.add_note(new_note)
+            except Exception as e:
+                logger.info(f'Failed note {note.title} with exception {e}')
+                counter += 1
 
     logger.info(f'Total notes: {len(notes.values())}, errors: {counter}')
 
