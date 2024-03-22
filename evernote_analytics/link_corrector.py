@@ -19,10 +19,10 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def process_incorrect_links(cnx: Connection, notes_query: Callable):
-    out_storage = NoteStorage(cnx)
+def process_incorrect_links(cnx_in: Connection, cnx_out: Connection, notes_query: Callable):
+    out_storage = NoteStorage(cnx_out)
 
-    it = deep_notes_iterator(cnx, notes_query)
+    it = deep_notes_iterator(cnx_in, notes_query)
     notes = {note.guid : note for note in it}
 
     counter = 0
@@ -36,18 +36,6 @@ def process_incorrect_links(cnx: Connection, notes_query: Callable):
 
     print(f'Errors: {counter}')
 
-
-def links(content):
-    from bs4 import BeautifulSoup
-
-    soup = BeautifulSoup(content.replace('en-note', 'html').replace('\xa0', ''), "html.parser")
-    for div in soup.find_all('div'):
-        names = [c.name for c in div.children]
-        if 'a' in names:
-            texts = [c.text for c in div.children]
-            for a in [c for c in div.children if c.name == 'a']:
-                components = a.attrs['href'].split('/')
-                yield texts[0], [c for c in components if len(c) > 0][-1]
 
 
 def fix_link_names(note_content, notes):
