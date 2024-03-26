@@ -20,7 +20,7 @@ def test_fix_links():
     p = LinkFixer()
     p.notes = {'eac75a87-f509-4eb3-a53c-9718cc6437d9' : Note(title='B_newname')}
     x = p.transform(Note(title='B', content=content))
-    assert 'B_newname' in x.content
+    assert '>B_newname<' in x.content
 
 def test_evernote_link():
     x = """<a href="evernote:///view/9214951/s86/a/b/" style="color: #69aa35;">B</a>"""
@@ -38,4 +38,4 @@ def test_evernote_with_html():
     p = LinkFixer()
     p.notes = {'b': Note(title='B_newname')}
     x = p.transform(Note(title='B', content=content))
-    assert 'B_newname' in x.content
+    assert '>B_newname<' in x.content
