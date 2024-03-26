@@ -54,9 +54,10 @@ class LinkFixer:
         if root.text and root.text.strip():
             root = ET.fromstring(root.text.strip())
 
-
+        logger.info(f'Processing {note.title}')
         for a in root.findall('div/a'):
-            if a.text is None:
+            logger.info(f'New link {a.text}')
+            if a.text is None and not len(a.findall('*')):
                 #logger.info(f'Empty link in note {note.title}')
                 continue
 
@@ -87,6 +88,9 @@ def is_evernote_link(a) -> bool:
 
 def canonicalize_evernote_link(a, notes) -> Optional[str]:
     href = a.attrib['href']
+    if href.endswith('/'):
+        href = href[:-1]
+
     href_components = href.split('/')
 
     if len(href_components) <= 2:

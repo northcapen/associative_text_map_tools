@@ -32,3 +32,10 @@ def test_change_http_link():
     x = """<a href="https://www.smartsheet.com/" style="color: #69aa35;">B</a>"""
     a = ET.fromstring(x)
     assert canonicalize_evernote_link(a, {'b' : Note(title='B_newname')}) is None
+
+def test_evernote_with_html():
+    content = """<en-note><div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>"""
+    p = LinkFixer()
+    p.notes = {'b': Note(title='B_newname')}
+    x = p.transform(Note(title='B', content=content))
+    assert 'B_newname' in x.content
