@@ -1,3 +1,5 @@
+from typing import Callable
+
 import json
 
 import os
@@ -15,25 +17,25 @@ OUT_DB = 'en_backup_nocorr.db'
 OUT_DB_CORR = 'en_backup_corr.db'
 
 class DummyProcessor:
-    def transform(note):
+    def __init__(self):
+        self.notes = None
+        self.buffer = []
+
+    def transform(self, note):
         return note
 
 @task
-def correct_links(db: str, context_dir: str, out_db: str, corr=False):
+def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr=False):
     from link_corrector import traverse_notes
 
-    inclusive_filter = lambda nb: nb.name not in mostly_articles_notebooks
-    exclusive_filter = lambda nb: nb.stack in ['Core', 'Maps']
-    #exclusive_filter = lambda nb: nb.name in ['Self']
+    ShellOperation(commands=[f'cd {context_dir} && cp {db} {out_db_name}']).run()
 
-    ShellOperation(commands=[f'cd {context_dir} && cp {db} {out_db}']).run()
-
-    out_db = as_sqllite(context_dir + '/' + out_db)
+    out_db = as_sqllite(context_dir + '/' + out_db_name)
     out_db.execute('delete from notes')
     traverser = LinkFixer() if corr else DummyProcessor()
-    traverse_notes(as_sqllite(context_dir + '/' + db), out_db, inclusive_filter, traverser)
+    traverse_notes(as_sqllite(context_dir + '/' + db), out_db, q, traverser)
     pd.DataFrame(traverser.buffer).to_csv('links.csv')
-    return out_db
+    return out_db_name
 
 @task
 def export_enex(db, context_dir, target_dir):
@@ -42,7 +44,7 @@ def export_enex(db, context_dir, target_dir):
     ShellOperation(commands=[command]).run()
 
 @task
-def read_folders(context_dir):
+def read_stacks(context_dir):
     original_dir = os.getcwd()  # Save the original working directory
 
     os.chdir(context_dir)
@@ -56,6 +58,7 @@ def read_folders(context_dir):
 
 @task
 def yarle(context_dir, enex):
+
     # Step 2: Open the config.json file in read mode
     with open('config.json', 'r') as file:
         data = json.load(file)
@@ -79,14 +82,24 @@ def db_to_parquet(context_dir):
 
 @flow
 def evernote_to_obsidian_flow(context_dir):
-    #corr_db = correct_links(db=IN_DB, out_db=OUT_DB, context_dir=context_dir)
-    #corr_db = correct_links(db=IN_DB, out_db=OUT_DB_CORR, context_dir=context_dir, corr=True)
-    corr_db = OUT_DB_CORR
+    inclusive_filter = lambda nb: nb.name not in mostly_articles_notebooks
+    exclusive_filter = lambda nb: nb.stack in ['Core', 'Maps']
+    # exclusive_filter = lambda nb: nb.name in ['Self']
+    q = inclusive_filter
+
+    orig_db = correct_links(
+        db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
+        q=q
+    )
+    corr_db = correct_links(db=IN_DB, out_db_name=OUT_DB_CORR, context_dir=context_dir, corr=True, q=q)
+    #corr_db = OUT_DB_CORR
 
     enex = 'enex'
-    #export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
-    for enex in read_folders(context_dir):
-        yarle(context_dir, enex=enex)
+    export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
+
+    ShellOperation(f'cd {context_dir} && rm -r md').run()
+    for enex in read_stacks(context_dir):
+         yarle(context_dir, enex=enex)
 
     #db_to_parquet(context_dir)
 
