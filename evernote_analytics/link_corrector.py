@@ -38,11 +38,15 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
     for note in tqdm(notes.values()):
         with logging_redirect_tqdm():
             try:
-                new_note = processor.transform(note=note)
-                out_storage.add_note(new_note.note)
+                if note.note.contentLength >= 50000:
+                    note.note.content = f'Cleared note, original size was {note.note.contentLength}'
+                else:
+                    note = processor.transform(note=note)
             except Exception as e:
                 logger.info(f'Failed note {note.title} with exception {e}')
                 counter += 1
+
+            out_storage.add_note(note.note)
 
     logger.info(f'Total notes: {len(notes.values())}, errors: {counter}')
 
