@@ -23,7 +23,7 @@ def test_fix_links():
     assert '>B_newname<' in x.content
 
 def test_evernote_link():
-    x = """<a href="evernote:///view/9214951/s86/a/b/" style="color: #69aa35;">B</a>"""
+    x = """<a href="evernote:///view/9214951/s86/b/x/" style="color: #69aa35;">B</a>"""
     a = ET.fromstring(x)
     assert 'B_newname' in canonicalize_evernote_link(a, {'b' : Note(title='B_newname')})
 
