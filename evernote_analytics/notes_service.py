@@ -1,10 +1,12 @@
+from dataclasses import dataclass
+
 import logging
 
 from typing import Iterable, Callable
 
 import lzma
 import pickle
-from evernote.edam.type.ttypes import Note
+from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.note_storage import NoteStorage, NoteBookStorage
 
@@ -24,6 +26,26 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+@dataclass
+class NoteTO:
+    note: Note
+    notebook: Notebook
+
+    @property
+    def guid(self):
+        return self.note.guid
+
+    @property
+    def title(self):
+        return self.note.title
+
+    @property
+    def notebook_name(self):
+        return self.notebook.name
+
+    @property
+    def content(self):
+        return self.note.content
 
 def read_notes(cnx):
     sql = f"""select n.guid, title, raw_note, n.name notebook, stack, notebook_guid
@@ -62,7 +84,7 @@ def read_notebooks(cnx):
 
 
 
-def deep_notes_iterator(cnx, condition: Callable) -> Iterable[Note]:
+def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
     in_storage = NoteStorage(cnx)
     in_nb_storage = NoteBookStorage(cnx)
 
@@ -70,4 +92,4 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[Note]:
         logger.debug(f'Processing {nb.name}')
         if condition(nb):
             for n in in_storage.iter_notes(nb.guid):
-                yield n
+                yield NoteTO(n, nb)

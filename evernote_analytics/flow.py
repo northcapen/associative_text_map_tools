@@ -97,7 +97,7 @@ def evernote_to_obsidian_flow(context_dir):
     enex = 'enex'
     export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
 
-    ShellOperation(f'cd {context_dir} && rm -r md').run()
+    #ShellOperation(f'cd {context_dir} && rm -r md').run()
     for enex in read_stacks(context_dir):
          yarle(context_dir, enex=enex)
 

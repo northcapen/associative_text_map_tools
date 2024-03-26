@@ -1,6 +1,8 @@
+from dataclasses import dataclass
+
 from datetime import datetime
 
-from typing import Callable, Optional, List
+from typing import Callable, Optional, List, Dict
 
 import logging
 from sqlite3 import Connection
@@ -10,9 +12,9 @@ import xml.etree.ElementTree as ET
 from evernote_backup.note_storage import NoteStorage
 from tqdm import tqdm
 
-from notes_service import deep_notes_iterator, mostly_articles_notebooks
+from notes_service import deep_notes_iterator, mostly_articles_notebooks, NoteTO
 
-from evernote.edam.type.ttypes import Note
+from evernote.edam.type.ttypes import Note, Notebook
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 
@@ -37,7 +39,7 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
         with logging_redirect_tqdm():
             try:
                 new_note = processor.transform(note=note)
-                out_storage.add_note(new_note)
+                out_storage.add_note(new_note.note)
             except Exception as e:
                 logger.info(f'Failed note {note.title} with exception {e}')
                 counter += 1
@@ -49,7 +51,7 @@ class LinkFixer:
         self.notes = None
         self.buffer = []
 
-    def transform(self, note: Note) -> Note:
+    def transform(self, note: NoteTO) -> NoteTO:
         root = ET.fromstring(note.content)
         if root.text and root.text.strip():
             root = ET.fromstring(root.text.strip())
@@ -77,7 +79,7 @@ class LinkFixer:
             self.buffer.append(x)
 
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
-        note.content = result
+        note.note.content = result
         return note
 
 def is_evernote_link(a) -> bool:
@@ -86,7 +88,7 @@ def is_evernote_link(a) -> bool:
 
     return a.attrib['href'].startswith('evernote:///')
 
-def canonicalize_evernote_link(a, notes) -> Optional[str]:
+def canonicalize_evernote_link(a, notes: Dict[str, NoteTO]) -> Optional[str]:
     href = a.attrib['href']
     if href.endswith('/'):
         href = href[:-1]
@@ -100,6 +102,7 @@ def canonicalize_evernote_link(a, notes) -> Optional[str]:
     #"evernote:///view/9214951/s86/c1e7e98a-825f-4eb8-b2df-d869ed082999/c1e7e98a-825f-4eb8-b2df-d869ed082999/"
     target_note_id = href_components[-2]
     if target_note_id in notes:
+        # return '/'.join(['..', notes[target_note_id].notebook_name, notes[target_note_id].title])
         return notes[target_note_id].title
     else:
         return None
