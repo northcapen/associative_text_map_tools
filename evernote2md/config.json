@@ -3,7 +3,7 @@
         "enex/Core/",
         "enex/Maps/"
     ],
-    "outputDir": "md",
+    "outputDir": "md_temp",
     "keepOriginalHtml": false,
     "isMetadataNeeded": true,
     "isNotebookNameNeeded": false,

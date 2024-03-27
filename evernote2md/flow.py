@@ -49,7 +49,7 @@ def read_stacks(context_dir):
 
     os.chdir(context_dir)
     x = [
-        f"enex/{folder}" for folder in os.listdir('enex')
+        f"{folder}" for folder in os.listdir('enex')
         if os.path.isdir(os.path.join('enex', folder))
     ]
     os.chdir(original_dir)  # Change back to the original working directory
@@ -57,22 +57,22 @@ def read_stacks(context_dir):
 
 
 @task
-def yarle(context_dir, enex):
-
+def yarle(context_dir, stack):
     # Step 2: Open the config.json file in read mode
     with open('config.json', 'r') as file:
         data = json.load(file)
 
-    data['enexSources'] = [enex]
+    data['enexSources'] = ['enex/' + stack]
 
     # Step 5: Open the config.json file in write mode
     with open(f'{context_dir}/config.json', 'w') as file:
         # Step 6: Dump the updated JSON data back into the file
         json.dump(data, file, indent=4)
 
-    command = f"cd {context_dir} && npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
+    command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
     print(command)
-    ShellOperation(commands=[command]).run()
+    ShellOperation(commands=[command], working_dir=context_dir).run()
+    ShellOperation(commands=[f'rm -rf md/{stack}', f'mkdir -p md/{stack}', f'mv md_temp/notes/* md/{stack}'], working_dir=context_dir).run()
 
 
 @task
