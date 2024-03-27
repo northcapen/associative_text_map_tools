@@ -34,7 +34,7 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
     out_db.execute('delete from notes')
     traverser = LinkFixer() if corr else DummyProcessor()
     traverse_notes(as_sqllite(context_dir + '/' + db), out_db, q, traverser)
-    pd.DataFrame(traverser.buffer).to_csv('links.csv')
+    pd.DataFrame(traverser.buffer).to_csv(f'{context_dir}/links.csv')
     return out_db_name
 
 @task
