@@ -80,7 +80,7 @@ def read_notebooks(cnx):
         return {'guid': notebook.guid, 'name': notebook.name, 'stack': notebook.stack}
 
     df = pd.DataFrame([to_row(nb) for nb in NoteBookStorage(cnx).iter_notebooks()])
-    df.to_csv('data/notebooks.csv', index=False)
+    return df
 
 
 

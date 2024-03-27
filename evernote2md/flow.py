@@ -9,7 +9,7 @@ from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 
 from link_corrector import LinkFixer
-from notes_service import read_notes, mostly_articles_notebooks
+from notes_service import read_notes, mostly_articles_notebooks, read_notebooks
 from utils import as_sqllite
 
 IN_DB = 'en_backup.db'
@@ -77,8 +77,13 @@ def yarle(context_dir, stack):
 
 @task
 def db_to_parquet(context_dir):
-    df = read_notes(as_sqllite(context_dir + '/' + IN_DB))
+    db = as_sqllite(context_dir + '/' + IN_DB)
+
+    df = read_notes(db)
     df.to_parquet(f'{context_dir}/raw_notes')
+
+    df = read_notebooks(db)
+    df.to_parquet(f'{context_dir}/notebooks')
 
 @flow
 def evernote_to_obsidian_flow(context_dir):
@@ -86,6 +91,8 @@ def evernote_to_obsidian_flow(context_dir):
     exclusive_filter = lambda nb: nb.stack in ['Core', 'Maps']
     # exclusive_filter = lambda nb: nb.name in ['Self']
     q = inclusive_filter
+    db_to_parquet(context_dir)
+
 
     orig_db = correct_links(
         db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
@@ -101,7 +108,6 @@ def evernote_to_obsidian_flow(context_dir):
     for enex in read_stacks(context_dir):
          yarle(context_dir, enex=enex)
 
-    #db_to_parquet(context_dir)
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(
