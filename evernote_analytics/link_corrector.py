@@ -74,6 +74,8 @@ class LinkFixer:
             new_name = canonicalize_evernote_link(a, self.notes)
             if new_name:
                 a.text = new_name
+                for child in list(a):  # We use list() to create a copy of the children list
+                    a.remove(child)
                 success = True
             else:
                 logger.error(f'Processing note {note.title}, link {a.text} not found')
