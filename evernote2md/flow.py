@@ -105,9 +105,9 @@ def evernote_to_obsidian_flow(context_dir):
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(
-        'evernote-to-obsidian-flow', parameters={'context_dir' : 'full'}
+        'evernote-to-obsidian-flow', parameters={'context_dir' : '../data/full'}
     )
     small = evernote_to_obsidian_flow.to_deployment(
-        'evernote-to-obsidian-flow-small', parameters={'context_dir' : 'small'}
+        'evernote-to-obsidian-flow-small', parameters={'context_dir' : '../data/small'}
     )
     serve(full, small)
