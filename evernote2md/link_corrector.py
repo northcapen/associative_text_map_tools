@@ -68,9 +68,9 @@ class LinkFixer:
                 continue
 
             old_name = a.text
-            new_name = canonicalize_evernote_link(a, self.notes)
-            if new_name:
-                a.text = new_name
+            linked_note = find_linked_note(a, self.notes)
+            if linked_note:
+                a.text = linked_note.title
                 for child in list(a):  # We use list() to create a copy of the children list
                     a.remove(child)
                 success = True
@@ -78,7 +78,14 @@ class LinkFixer:
                 logger.error(f'Processing note {note.title}, link {a.text} not found')
                 success = False
 
-            x = {'from' : note.title, 'to_old' : old_name, 'to_new' : new_name, 'success' : success, 'ts' : datetime.now()}
+            x = {
+                'from_title' : note.title,
+                'from_guid' : note.guid,
+                'to_guid' : linked_note.guid if linked_note else None,
+                'to_old' : old_name,
+                'to_new' : linked_note.title if linked_note else None,
+                'success' : success, 'ts' : datetime.now()
+            }
             self.buffer.append(x)
 
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
@@ -91,7 +98,7 @@ def is_evernote_link(a) -> bool:
 
     return a.attrib['href'].startswith('evernote:///')
 
-def canonicalize_evernote_link(a, notes: Dict[str, NoteTO]) -> Optional[str]:
+def find_linked_note(a, notes: Dict[str, NoteTO]) -> Optional[NoteTO]:
     href = a.attrib['href']
     if href.endswith('/'):
         href = href[:-1]
@@ -106,6 +113,6 @@ def canonicalize_evernote_link(a, notes: Dict[str, NoteTO]) -> Optional[str]:
     target_note_id = href_components[-2]
     if target_note_id in notes:
         # return '/'.join(['..', notes[target_note_id].notebook_name, notes[target_note_id].title])
-        return notes[target_note_id].title
+        return notes[target_note_id]
     else:
         return None
