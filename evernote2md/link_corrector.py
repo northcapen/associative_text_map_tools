@@ -1,8 +1,6 @@
-from dataclasses import dataclass
-
 from datetime import datetime
 
-from typing import Callable, Optional, List, Dict
+from typing import Callable, Optional, Dict
 
 import logging
 from sqlite3 import Connection
@@ -12,9 +10,8 @@ import xml.etree.ElementTree as ET
 from evernote_backup.note_storage import NoteStorage
 from tqdm import tqdm
 
-from notes_service import deep_notes_iterator, mostly_articles_notebooks, NoteTO
+from notes_service import deep_notes_iterator, NoteTO
 
-from evernote.edam.type.ttypes import Note, Notebook
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 

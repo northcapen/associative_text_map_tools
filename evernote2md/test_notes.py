@@ -1,4 +1,4 @@
-from evernote_analytics.link_corrector import canonicalize_evernote_link, LinkFixer
+from evernote2md.link_corrector import canonicalize_evernote_link, LinkFixer
 from dataclasses import dataclass
 
 import xml.etree.ElementTree as ET
