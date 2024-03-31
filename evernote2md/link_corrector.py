@@ -16,9 +16,9 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 handler = logging.FileHandler('application.log')
-handler.setLevel(logging.DEBUG)
+handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -57,9 +57,9 @@ class LinkFixer:
         if root.text and root.text.strip():
             root = ET.fromstring(root.text.strip())
 
-        logger.info(f'Processing {note.title}')
+        logger.debug(f'Processing {note.title}')
         for a in root.findall('div/a'):
-            logger.info(f'New link {a.text}')
+            logger.debug(f'New link {a.text}')
             if a.text is None and not len(a.findall('*')):
                 #logger.info(f'Empty link in note {note.title}')
                 continue
