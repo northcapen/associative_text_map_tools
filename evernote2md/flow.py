@@ -16,6 +16,9 @@ IN_DB = 'en_backup.db'
 OUT_DB = 'en_backup_nocorr.db'
 OUT_DB_CORR = 'en_backup_corr.db'
 
+ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
+TEXT_MAPS = lambda nb: nb.stack in ['Core', 'Maps']
+
 class DummyProcessor:
     def __init__(self):
         self.notes = None
@@ -38,10 +41,11 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
     return out_db_name
 
 @task
-def export_enex(db, context_dir, target_dir):
-    command = f"cd {context_dir} && evernote-backup export -d {db} --overwrite {target_dir}/"
-    print(command)
-    ShellOperation(commands=[command]).run()
+def export_enex(db, context_dir, target_dir, single_notes=False):
+    command = f"evernote-backup export -d {db} --overwrite {target_dir}/"
+    if single_notes:
+        command += ' --single-notes'
+    ShellOperation(commands=[command], working_dir=context_dir).run()
 
 @task
 def read_stacks(context_dir):
@@ -87,12 +91,9 @@ def db_to_parquet(context_dir):
 
 @flow
 def evernote_to_obsidian_flow(context_dir):
-    inclusive_filter = lambda nb: nb.name not in mostly_articles_notebooks
-    exclusive_filter = lambda nb: nb.stack in ['Core', 'Maps']
     # exclusive_filter = lambda nb: nb.name in ['Self']
-    q = inclusive_filter
+    q = ALL_EXCEPT_ARTICLES_FILTER
     db_to_parquet(context_dir)
-
 
     orig_db = correct_links(
         db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
@@ -107,6 +108,15 @@ def evernote_to_obsidian_flow(context_dir):
     for stack in read_stacks(context_dir):
          yarle(context_dir, stack)
 
+@flow
+def adhoc_flow(context_dir):
+    # enex = 'enex_single_notes'
+    # export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
+
+    corr_db = correct_links(
+        db=IN_DB, out_db_name=OUT_DB_CORR, context_dir=context_dir, corr=True,
+        q=ALL_EXCEPT_ARTICLES_FILTER
+    )
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(
@@ -115,4 +125,6 @@ if __name__ == '__main__':
     small = evernote_to_obsidian_flow.to_deployment(
         'evernote-to-obsidian-flow-small', parameters={'context_dir' : '../data/small'}
     )
-    serve(full, small)
+    adhoc_flow_full = adhoc_flow.to_deployment('adhoc-flow', parameters={'context_dir' : '../data/full'})
+
+    serve(full, small, adhoc_flow_full)
