@@ -61,14 +61,14 @@ def read_stacks(context_dir):
 
 
 @task
-def yarle(context_dir, stack):
-    print(f'Processing stack {stack}')
+def yarle(context_dir, source):
+    print(f'Processing stack {source}')
 
     # Step 2: Open the config.json file in read mode
     with open('config.json', 'r') as file:
         data = json.load(file)
 
-    data['enexSources'] = ['enex/' + stack]
+    data['enexSources'] = ['enex/' + source]
 
     # Step 5: Open the config.json file in write mode
     with open(f'{context_dir}/config.json', 'w') as file:
@@ -78,7 +78,13 @@ def yarle(context_dir, stack):
     command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
     print(command)
     ShellOperation(commands=[command], working_dir=context_dir).run()
-    ShellOperation(commands=[f'rm -rf "md/{stack}"', f'mkdir -p "md/{stack}"', f'mv md_temp/notes/* "md/{stack}"'], working_dir=context_dir).run()
+    #source_enex = source[:-len('.enex')]
+    ShellOperation(commands=[
+        f'rm -rf "md/{source}"',
+        f'mkdir -p "md/{source}"',
+        f'mv md_temp/notes/* '
+        f'"md/{source}"'],
+        working_dir=context_dir).run()
 
 
 @task
@@ -115,10 +121,8 @@ def adhoc_flow(context_dir):
     # enex = 'enex_single_notes'
     # export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
 
-    corr_db = correct_links(
-        db=IN_DB, out_db_name=OUT_DB_CORR, context_dir=context_dir, corr=True,
-        q=ALL_EXCEPT_ARTICLES_FILTER
-    )
+    for stack in read_stacks(context_dir, p=lambda p: True):
+        yarle(context_dir, stack)
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(
