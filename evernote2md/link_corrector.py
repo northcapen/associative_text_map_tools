@@ -81,7 +81,9 @@ class LinkFixer:
             if guid_from_link in self.notes:
                 linked_note = self.notes[guid_from_link]
                 a.text = linked_note.title
-                for child in list(a):  # We use list() to create a copy of the children list
+                a.attrib['href'] = a.text
+                a.attrib['type'] = 'file'
+                for child in list(a): 
                     a.remove(child)
                 status = 'success'
             elif self.notes_trash and guid_from_link in self.notes_trash:
