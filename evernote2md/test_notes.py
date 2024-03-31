@@ -19,18 +19,26 @@ def build_noteto(title, content=None):
     return NoteTO(note=Note(title=title, content=content, guid=str(uuid.uuid4())), notebook=None)
 
 def test_fix_links():
-    content = """<content>
-      <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-        <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+    en_note = """
         <en-note>
             <div><a href="evernote:///view/9214951/s86/eac75a87-f509-4eb3-a53c-9718cc6437d9/eac75a87-f509-4eb3-a53c-9718cc6437d9/" style="color: #69aa35;">B</a></div>
         </en-note>
-     ]]>
-    </content>"""
+    """
+    content = wrap_in_cdata(en_note=en_note)
     p = LinkFixer()
     p.notes = {'eac75a87-f509-4eb3-a53c-9718cc6437d9' : build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
     assert '>B_newname<' in x.content
+
+
+def wrap_in_cdata(en_note):
+    return f"""<content>
+      <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+        {en_note}
+     ]]>
+    </content>"""
+
 
 def test_evernote_link():
     x = """<a href="evernote:///view/9214951/s86/b/x/" style="color: #69aa35;">B</a>"""
@@ -44,7 +52,7 @@ def test_change_http_link():
     assert find_linked_note(a, {'b' : build_noteto(title='B_newname')}) is None
 
 def test_evernote_with_html():
-    content = """<en-note><div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>"""
+    content = wrap_in_cdata("""<en-note><div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>""")
     p = LinkFixer()
     p.notes = {'b': build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
