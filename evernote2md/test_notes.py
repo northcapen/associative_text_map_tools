@@ -68,6 +68,27 @@ def test_evernote_with_html():
     x = p.transform(build_noteto(title='B', content=content))
     assert '>B_newname<' in x.content
 
+def test_evernote_with_embeded():
+    content = """<en-note>
+                    <div>
+                        <a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none">
+                            <span style="color:#69aa35;">B</span>
+                        </a>
+                    </div>
+                    <ol>
+                        <li>
+                            <a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none">
+                                <span style="color:#69aa35;">X</span>
+                            </a>
+                        </li>
+                    </ol>
+                </en-note>"""
+    p = LinkFixer()
+    p.notes = {'b': build_noteto(title='B_newname')}
+    x = p.transform(build_noteto(title='B', content=content))
+    assert len(p.buffer) == 2
+    assert '>B_newname<' in x.content
+
 
 def xtest_evernote_wrapped_in_cdata():
     content = wrap_in_cdata(

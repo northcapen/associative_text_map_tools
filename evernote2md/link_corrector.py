@@ -69,7 +69,7 @@ class LinkFixer:
             return note
 
         logger.debug(f'Processing {note.title}')
-        for a in root.findall('div/a'):
+        for a in root.findall('.//a'):
             logger.debug(f'New link {a.text}')
             if a.text is None and not len(a.findall('*')):
                 continue
