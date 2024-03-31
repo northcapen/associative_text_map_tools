@@ -37,6 +37,7 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
                     logger.info(f'Clearing note {note.note.title}')
                     note.note.content = f'Cleared note, original size was {note.note.contentLength}'
                     status = 'cleared'
+                    out_storage.add_note(note.note)
                 else:
                     note_transformed = processor.transform(note=note)
                     if note_transformed:
