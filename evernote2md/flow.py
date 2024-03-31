@@ -62,6 +62,8 @@ def read_stacks(context_dir):
 
 @task
 def yarle(context_dir, stack):
+    print(f'Processing stack {stack}')
+
     # Step 2: Open the config.json file in read mode
     with open('config.json', 'r') as file:
         data = json.load(file)
@@ -76,7 +78,7 @@ def yarle(context_dir, stack):
     command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
     print(command)
     ShellOperation(commands=[command], working_dir=context_dir).run()
-    ShellOperation(commands=[f'rm -rf md/{stack}', f'mkdir -p md/{stack}', f'mv md_temp/notes/* md/{stack}'], working_dir=context_dir).run()
+    ShellOperation(commands=[f'rm -rf "md/{stack}"', f'mkdir -p "md/{stack}"', f'mv md_temp/notes/* "md/{stack}"'], working_dir=context_dir).run()
 
 
 @task
