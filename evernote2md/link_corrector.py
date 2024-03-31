@@ -53,7 +53,8 @@ class LinkFixer:
         self.buffer = []
 
     def transform(self, note: NoteTO) -> NoteTO:
-        root = ET.fromstring(note.content)
+        root = ET.fromstring(note.content.replace('&nbsp;', ' '))
+
         if root.text and root.text.strip():
             root = ET.fromstring(root.text.strip())
 
@@ -84,7 +85,8 @@ class LinkFixer:
                 'to_guid' : linked_note.guid if linked_note else None,
                 'to_old' : old_name,
                 'to_new' : linked_note.title if linked_note else None,
-                'success' : success, 'ts' : datetime.now()
+                'success' : success,
+                'ts' : datetime.now()
             }
             self.buffer.append(x)
 
