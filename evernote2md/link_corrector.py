@@ -8,6 +8,8 @@ from sqlite3 import Connection
 
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
+
+import pandas as pd
 from evernote_backup.note_storage import NoteStorage
 from tqdm import tqdm
 
@@ -27,29 +29,30 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
     processor.notes = notes
     processor.notes_trash = notes_trash
 
-    counter = 0
+    buf = []
     for note in tqdm(notes.values()):
         with logging_redirect_tqdm():
             try:
                 if note.note.contentLength >= 50000:
                     logger.info(f'Clearing note {note.note.title}')
                     note.note.content = f'Cleared note, original size was {note.note.contentLength}'
+                    status = 'cleared'
                 else:
-                    note = processor.transform(note=note)
-
+                    note_transformed = processor.transform(note=note)
+                    if note_transformed:
+                        out_storage.add_note(note_transformed.note)
+                        status = 'success'
+                    else:
+                        status = 'unparsed'
             except Exception as e:
                 logger.error(f'Failed note {note.title} with exception {e}')
                 logger.error(traceback.format_exc())
-                counter += 1
-                continue
+                status = 'failed'
 
-            if note:
-                out_storage.add_note(note.note)
-            else:
-                counter += 1
+            buf.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
 
+    pd.DataFrame(buf).to_csv('notes_status.csv')
 
-    logger.info(f'Total notes: {len(notes.values())}, errors: {counter}')
 
 class LinkFixer:
     def __init__(self):
@@ -58,9 +61,11 @@ class LinkFixer:
         self.buffer = []
 
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
-        root = self.parse_content(note)
-        if not root:
+        status, root = self.parse_content(note)
+        if not status:
             return None
+        if not root:
+            return note
 
         logger.debug(f'Processing {note.title}')
         for a in root.findall('div/a'):
@@ -107,18 +112,17 @@ class LinkFixer:
         try:
             root = ET.fromstring(note.content.replace('&nbsp;', ' '))
 
-            if root.text and root.text.strip():
-                logger.info(f'Found text in root element {root.text}, parsing it as XML')
-                root = ET.fromstring(root.text.strip())
-            #else:
-            #    logger.info('Root text is empty or None')
+            # if root.text and root.text.strip():
+            #     logger.info(f'Found text in root element {root.text}, parsing it as XML')
+            #     root = ET.fromstring(root.text.strip())
 
         except ET.ParseError as e:
             logger.error(f'Couldnt parse note {e}"')
             logger.error(root.text)
             logger.error(list(root))
+            return False, None
 
-        return root
+        return True, root
 
 
 def is_evernote_link(a) -> bool:
