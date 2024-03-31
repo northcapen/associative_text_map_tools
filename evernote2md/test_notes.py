@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from evernote2md.link_corrector import find_linked_note, LinkFixer
@@ -8,6 +9,22 @@ import xml.etree.ElementTree as ET
 from evernote2md.notes_service import NoteTO
 
 
+# Create a logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+# Create a console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Add the formatter to the console handler
+console_handler.setFormatter(formatter)
+
+# Add the console handler to the logger
+logger.addHandler(console_handler)
 @dataclass
 class Note:
     guid: str
@@ -20,24 +37,17 @@ def build_noteto(title, content=None):
 
 def test_fix_links():
     en_note = """
-        <en-note>
-            <div><a href="evernote:///view/9214951/s86/eac75a87-f509-4eb3-a53c-9718cc6437d9/eac75a87-f509-4eb3-a53c-9718cc6437d9/" style="color: #69aa35;">B</a></div>
-        </en-note>
+        <en-note><div><a href="evernote:///view/9214951/s86/eac75a87-f509-4eb3-a53c-9718cc6437d9/eac75a87-f509-4eb3-a53c-9718cc6437d9/" style="color: #69aa35;">B</a></div></en-note>
     """
-    content = wrap_in_cdata(en_note=en_note)
+    content = en_note
     p = LinkFixer()
     p.notes = {'eac75a87-f509-4eb3-a53c-9718cc6437d9' : build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
+    assert isinstance(x, NoteTO)
     assert '>B_newname<' in x.content
 
-
 def wrap_in_cdata(en_note):
-    return f"""<content>
-      <![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-        <!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
-        {en_note}
-     ]]>
-    </content>"""
+    return f"""<content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?><!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">{en_note}]]></content>"""
 
 
 def test_evernote_link():
@@ -52,7 +62,16 @@ def test_change_http_link():
     assert find_linked_note(a, {'b' : build_noteto(title='B_newname')}) is None
 
 def test_evernote_with_html():
-    content = wrap_in_cdata("""<en-note><div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>""")
+    content = """<en-note><div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>"""
+    p = LinkFixer()
+    p.notes = {'b': build_noteto(title='B_newname')}
+    x = p.transform(build_noteto(title='B', content=content))
+    assert '>B_newname<' in x.content
+
+def test_evernote_wrapped_in_cdata():
+    content = wrap_in_cdata(
+        """<en-note>top level text
+        <div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>""")
     p = LinkFixer()
     p.notes = {'b': build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
