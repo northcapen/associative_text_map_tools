@@ -93,3 +93,6 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
         if condition(nb):
             for n in in_storage.iter_notes(nb.guid):
                 yield NoteTO(n, nb)
+
+def iter_notes_trash(cnx):
+    return NoteStorage(cnx).iter_notes_trash()

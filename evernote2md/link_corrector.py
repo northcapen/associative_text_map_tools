@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 from evernote_backup.note_storage import NoteStorage
 from tqdm import tqdm
 
-from notes_service import deep_notes_iterator, NoteTO
+from notes_service import deep_notes_iterator, NoteTO, iter_notes_trash
 
 from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callable, processor):
     out_storage = NoteStorage(cnx_out)
 
-    it = deep_notes_iterator(cnx_in, notes_query)
-    notes = {note.guid : note for note in it}
+    notes = {note.guid: note for note in (deep_notes_iterator(cnx_in, notes_query))}
+    notes_trash = {note.guid : note for note in iter_notes_trash(cnx_in)}
     processor.notes = notes
+    processor.notes_trash = notes_trash
 
     counter = 0
     for note in tqdm(notes.values()):
@@ -53,6 +54,7 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
 class LinkFixer:
     def __init__(self):
         self.notes = None
+        self.notes_trash = None
         self.buffer = []
 
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
@@ -64,22 +66,27 @@ class LinkFixer:
         for a in root.findall('div/a'):
             logger.debug(f'New link {a.text}')
             if a.text is None and not len(a.findall('*')):
-                #logger.info(f'Empty link in note {note.title}')
                 continue
 
             if not is_evernote_link(a):
                 continue
 
             old_name = a.text
-            linked_note = find_linked_note(a, self.notes)
-            if linked_note:
+            guid_from_link = parse_a(a)
+            if guid_from_link in self.notes:
+                linked_note = self.notes[guid_from_link]
                 a.text = linked_note.title
                 for child in list(a):  # We use list() to create a copy of the children list
                     a.remove(child)
-                success = True
+                status = 'success'
+            elif self.notes_trash and guid_from_link in self.notes_trash:
+                logger.error(f'Processing note {note.title}, link {a.text} found in trash')
+                status = 'trash'
+                linked_note = None
             else:
                 logger.error(f'Processing note {note.title}, link {a.text} not found')
-                success = False
+                status = 'fail'
+                linked_note = None
 
             x = {
                 'from_title' : note.title,
@@ -87,7 +94,7 @@ class LinkFixer:
                 'to_guid' : linked_note.guid if linked_note else None,
                 'to_old' : old_name,
                 'to_new' : linked_note.title if linked_note else None,
-                'success' : success,
+                'status' : status,
                 'ts' : datetime.now()
             }
             self.buffer.append(x)
@@ -107,8 +114,9 @@ class LinkFixer:
             #    logger.info('Root text is empty or None')
 
         except ET.ParseError as e:
-            logger.error(e)
+            logger.error(f'Couldnt parse note {e}"')
             logger.error(root.text)
+            logger.error(list(root))
 
         return root
 
@@ -119,7 +127,7 @@ def is_evernote_link(a) -> bool:
 
     return a.attrib['href'].startswith('evernote:///')
 
-def find_linked_note(a, notes: Dict[str, NoteTO]) -> Optional[NoteTO]:
+def parse_a(a) -> Optional[str]:
     href = a.attrib['href']
     if href.endswith('/'):
         href = href[:-1]
@@ -130,8 +138,12 @@ def find_linked_note(a, notes: Dict[str, NoteTO]) -> Optional[NoteTO]:
         logger.error(f'Invalid evernote link {href}')
         return None
 
-    #"evernote:///view/9214951/s86/c1e7e98a-825f-4eb8-b2df-d869ed082999/c1e7e98a-825f-4eb8-b2df-d869ed082999/"
+    # "evernote:///view/9214951/s86/c1e7e98a-825f-4eb8-b2df-d869ed082999/c1e7e98a-825f-4eb8-b2df-d869ed082999/"
     target_note_id = href_components[-2]
+    return target_note_id
+
+def find_linked_note(a, notes: Dict[str, NoteTO]) -> Optional[NoteTO]:
+    target_note_id = parse_a(a)
     if target_note_id in notes:
         # return '/'.join(['..', notes[target_note_id].notebook_name, notes[target_note_id].title])
         return notes[target_note_id]
