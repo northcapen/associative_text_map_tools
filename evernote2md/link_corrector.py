@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 
 from typing import Callable, Optional, Dict
@@ -16,12 +17,6 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.FileHandler('application.log')
-handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callable, processor):
@@ -36,14 +31,22 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
         with logging_redirect_tqdm():
             try:
                 if note.note.contentLength >= 50000:
+                    logger.info(f'Clearing note {note.note.title}')
                     note.note.content = f'Cleared note, original size was {note.note.contentLength}'
                 else:
                     note = processor.transform(note=note)
+
             except Exception as e:
-                logger.info(f'Failed note {note.title} with exception {e}')
+                logger.error(f'Failed note {note.title} with exception {e}')
+                logger.error(traceback.format_exc())
+                counter += 1
+                continue
+
+            if note:
+                out_storage.add_note(note.note)
+            else:
                 counter += 1
 
-            out_storage.add_note(note.note)
 
     logger.info(f'Total notes: {len(notes.values())}, errors: {counter}')
 
@@ -52,11 +55,10 @@ class LinkFixer:
         self.notes = None
         self.buffer = []
 
-    def transform(self, note: NoteTO) -> NoteTO:
-        root = ET.fromstring(note.content.replace('&nbsp;', ' '))
-
-        if root.text and root.text.strip():
-            root = ET.fromstring(root.text.strip())
+    def transform(self, note: NoteTO) -> Optional[NoteTO]:
+        root = self.parse_content(note)
+        if not root:
+            return None
 
         logger.debug(f'Processing {note.title}')
         for a in root.findall('div/a'):
@@ -93,6 +95,23 @@ class LinkFixer:
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
         note.note.content = result
         return note
+
+    def parse_content(self, note):
+        try:
+            root = ET.fromstring(note.content.replace('&nbsp;', ' '))
+
+            if root.text and root.text.strip():
+                logger.info(f'Found text in root element {root.text}, parsing it as XML')
+                root = ET.fromstring(root.text.strip())
+            #else:
+            #    logger.info('Root text is empty or None')
+
+        except ET.ParseError as e:
+            logger.error(e)
+            logger.error(root.text)
+
+        return root
+
 
 def is_evernote_link(a) -> bool:
     if 'href' not in a.attrib:
