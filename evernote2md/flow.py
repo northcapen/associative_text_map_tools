@@ -17,6 +17,7 @@ OUT_DB = 'en_backup_nocorr.db'
 OUT_DB_CORR = 'en_backup_corr.db'
 
 ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
+ALL_NOTES = lambda nb: True
 TEXT_MAPS = lambda nb: nb.stack in ['Core', 'Maps']
 
 class DummyProcessor:
@@ -48,13 +49,13 @@ def export_enex(db, context_dir, target_dir, single_notes=False):
     ShellOperation(commands=[command], working_dir=context_dir).run()
 
 @task
-def read_stacks(context_dir):
+def read_stacks(context_dir, p=lambda x: True):
     original_dir = os.getcwd()  # Save the original working directory
 
     os.chdir(context_dir)
     x = [
-        f"{folder}" for folder in os.listdir('enex')
-        if os.path.isdir(os.path.join('enex', folder))
+        stack for stack in os.listdir('enex')
+        if os.path.isdir(os.path.join('enex', stack)) and p(stack)
     ]
     os.chdir(original_dir)  # Change back to the original working directory
     return x
@@ -98,17 +99,22 @@ def db_to_parquet(context_dir):
     df.to_parquet(f'{context_dir}/notebooks')
 
 @flow
-def evernote_to_obsidian_flow(context_dir):
+def evernote_to_obsidian_flow(context_dir, aux=False):
     # exclusive_filter = lambda nb: nb.name in ['Self']
-    q = ALL_EXCEPT_ARTICLES_FILTER
-    db_to_parquet(context_dir)
+    q = ALL_NOTES
+    if aux:
+        db_to_parquet(context_dir)
 
-    orig_db = correct_links(
-        db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
-        q=q
-    )
+        enex = 'enex_single_notes'
+        export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
+
+        orig_db = correct_links(
+             db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
+             q=q
+        )
+
     corr_db = correct_links(db=IN_DB, out_db_name=OUT_DB_CORR, context_dir=context_dir, corr=True, q=q)
-    #corr_db = OUT_DB_CORR
+    corr_db = OUT_DB_CORR
 
     enex = 'enex'
     export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
@@ -121,7 +127,7 @@ def adhoc_flow(context_dir):
     # enex = 'enex_single_notes'
     # export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
 
-    for stack in read_stacks(context_dir, p=lambda p: True):
+    for stack in read_stacks(context_dir, p=lambda stack: stack == 'Core'):
         yarle(context_dir, stack)
 
 if __name__ == '__main__':
