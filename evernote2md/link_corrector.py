@@ -111,7 +111,7 @@ class LinkFixer:
         note.note.content = result
         return note
 
-    def parse_content(self, note):
+    def parse_content(self, note) -> (bool, Optional[ET.Element]):
         try:
             root = ET.fromstring(note.content.replace('&nbsp;', ' '))
 
