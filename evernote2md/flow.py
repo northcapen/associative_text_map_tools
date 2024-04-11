@@ -1,22 +1,14 @@
-from typing import Callable, Iterator, Dict, Any
-
 import json
-
 import os
 
-import pandas as pd
-from evernote.edam.type.ttypes import Note
-from tqdm import tqdm
-
-from evernote_backup.note_storage import NoteStorage
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
+from tqdm import tqdm
 
 from evernote2md.cat_service import CatService
-from evernote2md.note_classifier import NoteClassifier
-from link_corrector import LinkFixer, ArticleCleaner
-from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, \
-    deep_notes_iterator
+from evernote2md.processors import clean_articles, fix_links, enrich_data
+from evernote_backup.note_storage import NoteStorage
+from notes_service import read_notes, mostly_articles_notebooks, read_notebooks
 from utils import as_sqllite
 
 IN_DB = 'en_backup.db'
@@ -34,25 +26,6 @@ class IdentityProcessor:
     def transform(self, note):
         return note
 
-@task
-def process_notes(db: str, context_dir: str, out_db_name: str, q: Callable, processor):
-    from link_corrector import traverse_notes
-
-    ShellOperation(commands=[f'cd {context_dir} && cp {db} {out_db_name}']).run()
-
-    indb = as_sqllite(context_dir + '/' + db)
-
-    notes = {note.guid: note for note in (deep_notes_iterator(indb, q))}
-    result = traverse_notes(list(notes.values()), processor)
-
-    out_db = as_sqllite(context_dir + '/' + out_db_name)
-    out_db.execute('delete from notes')
-    out_storage = NoteStorage(out_db)
-    for note in tqdm(result):
-        out_storage.add_note(note.note)
-
-    #pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
-    return out_db_name
 
 @task
 def export_enex(db, context_dir, target_dir, single_notes=False):
@@ -124,58 +97,35 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
         enex = 'enex_single_notes'
         export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
 
-        orig_db = process_notes(
-             db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
-             q=q
-        )
+        # orig_db = process_notes(
+        #      db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
+        #      q=q
+        # )
 
-    corr_db = process_notes(
-        db=IN_DB,
-        out_db_name=OUT_DB_CORR,
-        context_dir=context_dir,
-        q=q,
-        processor=ArticleCleaner()
-    )
+    notes_cleaned = clean_articles(context_dir, q, IN_DB)
+    links_fixed = fix_links(context_dir, notes_cleaned)
+    notes_classified = enrich_data(links_fixed)
 
-    notes_p = note_metadata(context_dir, active=True)
-    notes_trash = note_metadata(context_dir, active=True)
-    link_fixer = LinkFixer(notes_p, notes_trash)
-
-    links_fixed = process_notes(
-        db=corr_db,
-        out_db_name='out_link_fixed.db',
-        context_dir=context_dir,
-        corr=True,
-        q=q,
-        processor=link_fixer
-    )
-
-    notes_classified = process_notes(
-        db=links_fixed,
-        out_db_name='notes_classified.db',
-        context_dir=context_dir,
-        corr=True,
-        q=q,
-        processor=NoteClassifier()
-    )
-
+    out_db = store_to_db(context_dir, OUT_DB_CORR, notes_classified)
 
     enex = 'enex'
-    export_enex(db=notes_classified, context_dir=context_dir, target_dir=enex)
+    export_enex(db=out_db, context_dir=context_dir, target_dir=enex)
 
-    for stack in read_stacks(context_dir, lambda stack: stack == 'Core'):
+    for stack in read_stacks(context_dir):
          yarle(context_dir, source=stack, target=stack)
 
 
-def note_metadata(context_dir, active=True) -> Dict[Any, Note]:
-    notes_parquet = pd.read_parquet(f'{context_dir}/raw_notes').query('active == @active')
-    print(notes_parquet.columns)
-    buff = {}
-    for note in notes_parquet.itertuples():
-         # noinspection PyUnresolvedReferences
-         buff[note.id] = Note(guid=note.id, title=note.title)
+@task
+def store_to_db(context_dir, db, notes):
+    ShellOperation(commands=[f'cd {context_dir} && cp {IN_DB} {db}']).run()
 
-    return buff
+    out_db = as_sqllite(context_dir + '/' + db)
+    out_db.execute('delete from notes')
+    out_storage = NoteStorage(out_db)
+    for note in tqdm(notes):
+        out_storage.add_note(note.note)
+
+    return db
 
 
 @flow

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import logging
 
-from typing import Iterable, Callable
+from typing import Iterable, Callable, Dict, Any
 
 import lzma
 import pickle
@@ -96,3 +96,13 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
 
 def iter_notes_trash(cnx):
     return NoteStorage(cnx).iter_notes_trash()
+
+def note_metadata(context_dir, active=True) -> Dict[Any, Note]:
+    notes_parquet = pd.read_parquet(f'{context_dir}/raw_notes').query('active == @active')
+    print(notes_parquet.columns)
+    buff = {}
+    for note in notes_parquet.itertuples():
+         # noinspection PyUnresolvedReferences
+         buff[note.id] = Note(guid=note.id, title=note.title)
+
+    return buff
