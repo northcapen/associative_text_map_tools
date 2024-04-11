@@ -10,7 +10,7 @@ from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 
 from evernote2md.cat_service import CatService
-from link_corrector import LinkFixer
+from link_corrector import LinkFixer, ArticleCleaner
 from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, \
     deep_notes_iterator, iter_notes_trash
 from utils import as_sqllite
@@ -39,19 +39,20 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
     indb = as_sqllite(context_dir + '/' + db)
 
     notes = {note.guid: note for note in (deep_notes_iterator(indb, q))}
-    if corr:
-        notes_trash = {note.guid: note for note in iter_notes_trash(indb)}
-        traverser = LinkFixer(notes, notes_trash)
-    else:
-        traverser = IdentityProcessor()
+    notes_trash = {note.guid: note for note in iter_notes_trash(indb)}
+
+    notes_article_cleaned = traverse_notes(list(notes.values()), ArticleCleaner())
+
+    link_fixer = LinkFixer(notes, notes_trash)
+    notes_fixed_links = traverse_notes(notes_article_cleaned, link_fixer)
 
     out_db = as_sqllite(context_dir + '/' + out_db_name)
     out_db.execute('delete from notes')
     out_storage = NoteStorage(out_db)
-    for note in traverse_notes(notes, traverser):
+    for note in notes_fixed_links:
         out_storage.add_note(note.note)
 
-    pd.DataFrame(traverser.buffer).to_csv(f'{context_dir}/links.csv')
+    pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
     return out_db_name
 
 @task

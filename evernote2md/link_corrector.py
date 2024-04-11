@@ -13,36 +13,46 @@ from notes_service import NoteTO
 
 logger = logging.getLogger(__name__)
 
+class NoteTransformer:
+    def transform(self, note: NoteTO) -> Optional[NoteTO]:
+        raise NotImplementedError
 
-def traverse_notes(notes: Dict[str, NoteTO], processor) -> List[NoteTO]:
+
+def traverse_notes(notes: List[NoteTO], processor: NoteTransformer) -> List[NoteTO]:
     statuses = []
-    notess = []
-    for note in tqdm(notes.values()):
+    out_notes = []
+    for note in tqdm(notes):
         with logging_redirect_tqdm():
             try:
-                if note.note.contentLength >= 50000:
-                    logger.info(f'Clearing note {note.note.title}')
-                    note.note.content = f'Cleared note, original size was {note.note.contentLength}'
-                    note.status = 'cleared'
-                    notess.append(note)
-                else:
-                    note_transformed = processor.transform(note=note)
-                    notess.append(note_transformed)
-
+                note_transformed = processor.transform(note=note)
+                out_notes.append(note_transformed)
+                status = note_transformed.status
             except Exception as e:
                 logger.error(f'Failed note {note.title} with exception {e}')
                 logger.error(traceback.format_exc())
                 status = 'failed'
 
-            #statuses.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
+            statuses.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
 
-    pd.DataFrame(statuses).to_csv('notes_status.csv')
-    return notess
+    logger.info(f'Finished processing notes by {type(processor)}, was {len(notes)}, out {len(out_notes)}')
+    logger.info(pd.DataFrame(statuses)['status'].isnull())
+    for note in out_notes:
+        note.status = None
 
-class NoteTransformer:
+    return out_notes
+
+
+class ArticleCleaner(NoteTransformer):
 
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
-        raise NotImplementedError
+        if note.note.contentLength >= 50000:
+            logger.info(f'Clearing note {note.note.title}')
+            note.note.content = f'Cleared note, original size was {note.note.contentLength}'
+            note.status = 'cleared'
+            return note
+
+        return note
+
 
 
 class LinkFixer(NoteTransformer):
