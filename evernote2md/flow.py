@@ -5,12 +5,14 @@ import json
 import os
 
 import pandas as pd
+from evernote_backup.note_storage import NoteStorage
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 
 from evernote2md.cat_service import CatService
 from link_corrector import LinkFixer
-from notes_service import read_notes, mostly_articles_notebooks, read_notebooks
+from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, \
+    deep_notes_iterator, iter_notes_trash
 from utils import as_sqllite
 
 IN_DB = 'en_backup.db'
@@ -21,9 +23,8 @@ ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
 ALL_NOTES = lambda nb: True
 TEXT_MAPS = lambda nb: nb.stack in ['Core', 'Maps']
 
-class DummyProcessor:
+class IdentityProcessor:
     def __init__(self):
-        self.notes = None
         self.buffer = []
 
     def transform(self, note):
@@ -35,10 +36,21 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
 
     ShellOperation(commands=[f'cd {context_dir} && cp {db} {out_db_name}']).run()
 
+    indb = as_sqllite(context_dir + '/' + db)
+
+    notes = {note.guid: note for note in (deep_notes_iterator(indb, q))}
+    if corr:
+        notes_trash = {note.guid: note for note in iter_notes_trash(indb)}
+        traverser = LinkFixer(notes, notes_trash)
+    else:
+        traverser = IdentityProcessor()
+
     out_db = as_sqllite(context_dir + '/' + out_db_name)
     out_db.execute('delete from notes')
-    traverser = LinkFixer() if corr else DummyProcessor()
-    traverse_notes(as_sqllite(context_dir + '/' + db), out_db, q, traverser)
+    out_storage = NoteStorage(out_db)
+    for note in traverse_notes(notes, traverser):
+        out_storage.add_note(note)
+
     pd.DataFrame(traverser.buffer).to_csv(f'{context_dir}/links.csv')
     return out_db_name
 

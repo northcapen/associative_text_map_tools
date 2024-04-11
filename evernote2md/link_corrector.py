@@ -1,35 +1,22 @@
-import traceback
-from datetime import datetime
-
-from typing import Callable, Optional, Dict
-
 import logging
-from sqlite3 import Connection
-
+import traceback
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
+from datetime import datetime
+from typing import Optional, Dict
 
 import pandas as pd
-from evernote_backup.note_storage import NoteStorage
 from tqdm import tqdm
-
-from notes_service import deep_notes_iterator, NoteTO, iter_notes_trash
-
 from tqdm.contrib.logging import logging_redirect_tqdm
 
+from notes_service import NoteTO
 
 logger = logging.getLogger(__name__)
 
 
-def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callable, processor):
-    out_storage = NoteStorage(cnx_out)
-
-    notes = {note.guid: note for note in (deep_notes_iterator(cnx_in, notes_query))}
-    notes_trash = {note.guid : note for note in iter_notes_trash(cnx_in)}
-    processor.notes = notes
-    processor.notes_trash = notes_trash
-
-    buf = []
+def traverse_notes(notes, processor):
+    statuses = []
+    notess = []
     for note in tqdm(notes.values()):
         with logging_redirect_tqdm():
             try:
@@ -37,11 +24,11 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
                     logger.info(f'Clearing note {note.note.title}')
                     note.note.content = f'Cleared note, original size was {note.note.contentLength}'
                     status = 'cleared'
-                    out_storage.add_note(note.note)
+                    notess.append(note.note)
                 else:
                     note_transformed = processor.transform(note=note)
                     if note_transformed:
-                        out_storage.add_note(note_transformed.note)
+                        notess.append(note_transformed.note)
                         status = 'success'
                     else:
                         status = 'unparsed'
@@ -50,15 +37,20 @@ def traverse_notes(cnx_in: Connection, cnx_out: Connection, notes_query: Callabl
                 logger.error(traceback.format_exc())
                 status = 'failed'
 
-            buf.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
+            statuses.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
 
-    pd.DataFrame(buf).to_csv('notes_status.csv')
+    pd.DataFrame(statuses).to_csv('notes_status.csv')
+    return notess
 
+class NoteTransformer:
 
-class LinkFixer:
-    def __init__(self):
-        self.notes = None
-        self.notes_trash = None
+    def transform(self, note: NoteTO) -> Optional[NoteTO]:
+        raise NotImplementedError
+
+class LinkFixer(NoteTransformer):
+    def __init__(self, notes, notes_trash):
+        self.notes = notes
+        self.notes_trash = notes_trash
         self.buffer = []
 
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
