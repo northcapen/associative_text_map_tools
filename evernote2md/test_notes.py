@@ -41,7 +41,7 @@ def test_fix_links():
     """
     content = en_note
     p = LinkFixer()
-    p.notes = {'eac75a87-f509-4eb3-a53c-9718cc6437d9' : build_noteto(title='B_newname')}
+    p.note_guid_to_titles_dict = {'eac75a87-f509-4eb3-a53c-9718cc6437d9' : build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
     assert isinstance(x, NoteTO)
     assert '>B_newname<' in x.content
@@ -64,7 +64,7 @@ def test_change_http_link():
 def test_evernote_with_html():
     content = """<en-note><div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>"""
     p = LinkFixer()
-    p.notes = {'b': build_noteto(title='B_newname')}
+    p.note_guid_to_titles_dict = {'b': build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
     assert '>B_newname<' in x.content
 
@@ -84,7 +84,7 @@ def test_evernote_with_embeded():
                     </ol>
                 </en-note>"""
     p = LinkFixer()
-    p.notes = {'b': build_noteto(title='B_newname')}
+    p.note_guid_to_titles_dict = {'b': build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
     assert len(p.buffer) == 2
     assert '>B_newname<' in x.content
@@ -95,6 +95,6 @@ def xtest_evernote_wrapped_in_cdata():
         """<en-note>top level text
         <div><a href="evernote:///view/9214951/s86/b/x/" rev="en_rl_none"><span style="color:#69aa35;">B</span></a></div></en-note>""")
     p = LinkFixer()
-    p.notes = {'b': build_noteto(title='B_newname')}
+    p.note_guid_to_titles_dict = {'b': build_noteto(title='B_newname')}
     x = p.transform(build_noteto(title='B', content=content))
     assert '>B_newname<' in x.content

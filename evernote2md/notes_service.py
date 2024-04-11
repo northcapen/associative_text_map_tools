@@ -55,7 +55,6 @@ def read_notes(cnx):
     """
     cur = cnx.execute(sql)
     result = cur.fetchall()
-    #%%
     def to_note(row):
         note = pickle.loads(lzma.decompress(row["raw_note"]))
 
@@ -73,7 +72,7 @@ def read_notes(cnx):
     df = notes_df.query('active').copy()
     df['created'] = pd.to_datetime(df['created'], unit='ms')
     df['updated'] = pd.to_datetime(df['updated'], unit='ms')
-    #%%
+
     return df
 
 def read_notebooks(cnx):

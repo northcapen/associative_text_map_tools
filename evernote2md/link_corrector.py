@@ -3,9 +3,10 @@ import traceback
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Set, Any
 
 import pandas as pd
+from evernote.edam.type.ttypes import Note
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -63,8 +64,8 @@ class ArticleCleaner(NoteTransformer):
 
 
 class LinkFixer(NoteTransformer):
-    def __init__(self, notes, notes_trash):
-        self.notes = notes
+    def __init__(self, note_guid_to_titles_dict: Dict[Any, Note], notes_trash: Dict[Any, Note]):
+        self.note_guid_to_titles_dict = note_guid_to_titles_dict
         self.notes_trash = notes_trash
         self.buffer = []
 
@@ -87,8 +88,8 @@ class LinkFixer(NoteTransformer):
 
             old_name = a.text
             guid_from_link = parse_a(a)
-            if guid_from_link in self.notes:
-                linked_note = self.notes[guid_from_link]
+            if guid_from_link in self.note_guid_to_titles_dict:
+                linked_note = self.note_guid_to_titles_dict[guid_from_link]
                 a.text = linked_note.title
                 a.attrib['href'] = a.text
                 a.attrib['type'] = 'file'

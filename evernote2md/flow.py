@@ -1,10 +1,13 @@
-from typing import Callable
+from typing import Callable, Iterator, Dict, Any
 
 import json
 
 import os
 
 import pandas as pd
+from evernote.edam.type.ttypes import Note
+from tqdm import tqdm
+
 from evernote_backup.note_storage import NoteStorage
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
@@ -13,7 +16,7 @@ from evernote2md.cat_service import CatService
 from evernote2md.note_classifier import NoteClassifier
 from link_corrector import LinkFixer, ArticleCleaner
 from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, \
-    deep_notes_iterator, iter_notes_trash
+    deep_notes_iterator
 from utils import as_sqllite
 
 IN_DB = 'en_backup.db'
@@ -32,7 +35,7 @@ class IdentityProcessor:
         return note
 
 @task
-def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr=False):
+def process_notes(db: str, context_dir: str, out_db_name: str, q: Callable, processor):
     from link_corrector import traverse_notes
 
     ShellOperation(commands=[f'cd {context_dir} && cp {db} {out_db_name}']).run()
@@ -40,23 +43,15 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
     indb = as_sqllite(context_dir + '/' + db)
 
     notes = {note.guid: note for note in (deep_notes_iterator(indb, q))}
-    notes_trash = {note.guid: note for note in iter_notes_trash(indb)}
-
-    notes_article_cleaned = traverse_notes(list(notes.values()), ArticleCleaner())
-
-    link_fixer = LinkFixer(notes, notes_trash)
-    notes_fixed_links = traverse_notes(notes_article_cleaned, link_fixer)
-
-    note_classifier = NoteClassifier()
-    notes_enriched_tags = traverse_notes(notes_fixed_links, note_classifier)
+    result = traverse_notes(list(notes.values()), processor)
 
     out_db = as_sqllite(context_dir + '/' + out_db_name)
     out_db.execute('delete from notes')
     out_storage = NoteStorage(out_db)
-    for note in notes_enriched_tags:
+    for note in tqdm(result):
         out_storage.add_note(note.note)
 
-    pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
+    #pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
     return out_db_name
 
 @task
@@ -129,19 +124,59 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
         enex = 'enex_single_notes'
         export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
 
-        orig_db = correct_links(
+        orig_db = process_notes(
              db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
              q=q
         )
 
-    corr_db = correct_links(db=IN_DB, out_db_name=OUT_DB_CORR, context_dir=context_dir, corr=True, q=q)
-    corr_db = OUT_DB_CORR
+    corr_db = process_notes(
+        db=IN_DB,
+        out_db_name=OUT_DB_CORR,
+        context_dir=context_dir,
+        q=q,
+        processor=ArticleCleaner()
+    )
+
+    notes_p = note_metadata(context_dir, active=True)
+    notes_trash = note_metadata(context_dir, active=True)
+    link_fixer = LinkFixer(notes_p, notes_trash)
+
+    links_fixed = process_notes(
+        db=corr_db,
+        out_db_name='out_link_fixed.db',
+        context_dir=context_dir,
+        corr=True,
+        q=q,
+        processor=link_fixer
+    )
+
+    notes_classified = process_notes(
+        db=links_fixed,
+        out_db_name='notes_classified.db',
+        context_dir=context_dir,
+        corr=True,
+        q=q,
+        processor=NoteClassifier()
+    )
+
 
     enex = 'enex'
-    export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
+    export_enex(db=notes_classified, context_dir=context_dir, target_dir=enex)
 
     for stack in read_stacks(context_dir, lambda stack: stack == 'Core'):
          yarle(context_dir, source=stack, target=stack)
+
+
+def note_metadata(context_dir, active=True) -> Dict[Any, Note]:
+    notes_parquet = pd.read_parquet(f'{context_dir}/raw_notes').query('active == @active')
+    print(notes_parquet.columns)
+    buff = {}
+    for note in notes_parquet.itertuples():
+         # noinspection PyUnresolvedReferences
+         buff[note.id] = Note(guid=note.id, title=note.title)
+
+    return buff
+
 
 @flow
 def adhoc_flow(context_dir):
