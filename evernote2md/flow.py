@@ -10,6 +10,7 @@ from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 
 from evernote2md.cat_service import CatService
+from evernote2md.note_classifier import NoteClassifier
 from link_corrector import LinkFixer, ArticleCleaner
 from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, \
     deep_notes_iterator, iter_notes_trash
@@ -46,10 +47,13 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
     link_fixer = LinkFixer(notes, notes_trash)
     notes_fixed_links = traverse_notes(notes_article_cleaned, link_fixer)
 
+    note_classifier = NoteClassifier()
+    notes_enriched_tags = traverse_notes(notes_fixed_links, note_classifier)
+
     out_db = as_sqllite(context_dir + '/' + out_db_name)
     out_db.execute('delete from notes')
     out_storage = NoteStorage(out_db)
-    for note in notes_fixed_links:
+    for note in notes_enriched_tags:
         out_storage.add_note(note.note)
 
     pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
@@ -136,7 +140,7 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
     enex = 'enex'
     export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
 
-    for stack in read_stacks(context_dir):
+    for stack in read_stacks(context_dir, lambda stack: stack == 'Core'):
          yarle(context_dir, source=stack, target=stack)
 
 @flow
