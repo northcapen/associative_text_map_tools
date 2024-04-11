@@ -12,6 +12,13 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 from notes_service import NoteTO
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('application.log')
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 
 class NoteTransformer:
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
@@ -110,7 +117,7 @@ class LinkFixer(NoteTransformer):
 
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
         note.note.content = result
-        note.status = 'success'
+        note.status = 'processed' if isinstance(status, str) else None
         return note
 
     def parse_content(self, note) -> (bool, Optional[ET.Element]):
@@ -122,9 +129,9 @@ class LinkFixer(NoteTransformer):
             #     root = ET.fromstring(root.text.strip())
 
         except ET.ParseError as e:
-            logger.error(f'Couldnt parse note {e}"')
-            logger.error(root.text)
-            logger.error(list(root))
+            logger.error(f'Couldnt parse note {note.title}, got error {e}"')
+            #logger.error(root.text)
+            #logger.error(list(root))
             return False, None
 
         return True, root
