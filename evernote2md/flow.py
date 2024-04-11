@@ -8,6 +8,7 @@ import pandas as pd
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 
+from evernote2md.cat_service import CatService
 from link_corrector import LinkFixer
 from notes_service import read_notes, mostly_articles_notebooks, read_notebooks
 from utils import as_sqllite
@@ -62,7 +63,7 @@ def read_stacks(context_dir, p=lambda x: True):
 
 
 @task
-def yarle(context_dir, source):
+def yarle(context_dir, source, target, root_dir='md'):
     print(f'Processing stack {source}')
 
     # Step 2: Open the config.json file in read mode
@@ -80,12 +81,14 @@ def yarle(context_dir, source):
     print(command)
     ShellOperation(commands=[command], working_dir=context_dir).run()
     #source_enex = source[:-len('.enex')]
-    ShellOperation(commands=[
-        f'rm -rf "md/{source}"',
-        f'mkdir -p "md/{source}"',
-        f'mv md_temp/notes/* '
-        f'"md/{source}"'],
-        working_dir=context_dir).run()
+    ShellOperation(
+        commands=[
+            f'rm -rf "{root_dir}/{target}"',
+            f'mkdir -p "{root_dir}/{target}"',
+            f'mv md_temp/notes/* "{root_dir}/{target}"'
+        ],
+        working_dir=context_dir
+    ).run()
 
 
 @task
@@ -120,15 +123,16 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
     export_enex(db=corr_db, context_dir=context_dir, target_dir=enex)
 
     for stack in read_stacks(context_dir):
-         yarle(context_dir, stack)
+         yarle(context_dir, source=stack, target=stack)
 
 @flow
 def adhoc_flow(context_dir):
     # enex = 'enex_single_notes'
     # export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
 
+
     for stack in read_stacks(context_dir, p=lambda stack: stack == 'Core'):
-        yarle(context_dir, stack)
+        yarle(context_dir, stack, CatService().get_cat2(cat3=stack) + '/' + stack, root_dir='mdx')
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(
