@@ -49,7 +49,7 @@ def correct_links(db: str, context_dir: str, out_db_name: str, q: Callable, corr
     out_db.execute('delete from notes')
     out_storage = NoteStorage(out_db)
     for note in traverse_notes(notes, traverser):
-        out_storage.add_note(note)
+        out_storage.add_note(note.note)
 
     pd.DataFrame(traverser.buffer).to_csv(f'{context_dir}/links.csv')
     return out_db_name

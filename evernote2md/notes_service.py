@@ -30,6 +30,7 @@ logger.addHandler(handler)
 class NoteTO:
     note: Note
     notebook: Notebook
+    status: str
 
     @property
     def guid(self):
@@ -92,7 +93,7 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
         logger.debug(f'Processing {nb.name}')
         if condition(nb):
             for n in in_storage.iter_notes(nb.guid):
-                yield NoteTO(n, nb)
+                yield NoteTO(n, nb, 'initial')
 
 def iter_notes_trash(cnx):
     return NoteStorage(cnx).iter_notes_trash()

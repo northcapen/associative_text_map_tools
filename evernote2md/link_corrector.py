@@ -3,7 +3,7 @@ import traceback
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 import pandas as pd
 from tqdm import tqdm
@@ -14,7 +14,7 @@ from notes_service import NoteTO
 logger = logging.getLogger(__name__)
 
 
-def traverse_notes(notes, processor):
+def traverse_notes(notes: Dict[str, NoteTO], processor) -> List[NoteTO]:
     statuses = []
     notess = []
     for note in tqdm(notes.values()):
@@ -23,21 +23,18 @@ def traverse_notes(notes, processor):
                 if note.note.contentLength >= 50000:
                     logger.info(f'Clearing note {note.note.title}')
                     note.note.content = f'Cleared note, original size was {note.note.contentLength}'
-                    status = 'cleared'
-                    notess.append(note.note)
+                    note.status = 'cleared'
+                    notess.append(note)
                 else:
                     note_transformed = processor.transform(note=note)
-                    if note_transformed:
-                        notess.append(note_transformed.note)
-                        status = 'success'
-                    else:
-                        status = 'unparsed'
+                    notess.append(note_transformed)
+
             except Exception as e:
                 logger.error(f'Failed note {note.title} with exception {e}')
                 logger.error(traceback.format_exc())
                 status = 'failed'
 
-            statuses.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
+            #statuses.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
 
     pd.DataFrame(statuses).to_csv('notes_status.csv')
     return notess
@@ -46,6 +43,7 @@ class NoteTransformer:
 
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
         raise NotImplementedError
+
 
 class LinkFixer(NoteTransformer):
     def __init__(self, notes, notes_trash):
@@ -56,7 +54,8 @@ class LinkFixer(NoteTransformer):
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
         status, root = self.parse_content(note)
         if not status:
-            return None
+            note.status = 'unparsed'
+            return note
         if not root:
             return note
 
@@ -101,6 +100,7 @@ class LinkFixer(NoteTransformer):
 
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
         note.note.content = result
+        note.status = 'success'
         return note
 
     def parse_content(self, note) -> (bool, Optional[ET.Element]):
