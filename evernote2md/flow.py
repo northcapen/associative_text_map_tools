@@ -71,6 +71,7 @@ def yarle(context_dir, source, target, root_dir='md'):
         data = json.load(file)
 
     data['enexSources'] = ['enex/' + source]
+    data['templateFile'] = os.path.abspath('noteTemplate.tmpl')
 
     # Step 5: Open the config.json file in write mode
     with open(f'{context_dir}/config.json', 'w') as file:

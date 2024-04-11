@@ -64,7 +64,6 @@
     "skipEnexFileNameFromOutputPath": false,
     "keepMDCharactersOfENNotes": false,
     "monospaceIsCodeBlock": false,
-    "currentTemplate": "---\n\n{created-at-block}Created at: {created-at}{end-created-at-block}\n{updated-at-block}Last updated at: {updated-at}{end-updated-at-block}\n{source-url-block}Source URL: {source-url}{end-source-url-block}\n{tags-block}tags: {tags}{end-tags-block}\n\n---\n\n{title-block}# {title}{end-title-block}\n\n\n{content-block}{content}{end-content-block}\n\n",
     "logseqSettings": {
         "journalNotes": false
     },
