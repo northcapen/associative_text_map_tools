@@ -8,7 +8,7 @@ from evernote2md.notes_service import note_metadata, deep_notes_iterator, NoteTO
 from evernote2md.utils import as_sqllite
 from link_corrector import traverse_notes
 
-@task
+@task(persist_result=True)
 def clean_articles(context_dir, db, q) -> List[NoteTO]:
     indb = as_sqllite(context_dir + '/' + db)
     notes = list(deep_notes_iterator(indb, q))
