@@ -1,5 +1,9 @@
 import json
 import os
+from pathlib import Path
+from typing import List
+
+from evernote_backup.note_exporter import NoteExporter
 
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
@@ -8,7 +12,7 @@ from tqdm import tqdm
 from evernote2md.cat_service import CatService
 from evernote2md.processors import clean_articles, fix_links, enrich_data
 from evernote_backup.note_storage import NoteStorage
-from notes_service import read_notes, mostly_articles_notebooks, read_notebooks
+from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, NoteTO
 from utils import as_sqllite
 
 IN_DB = 'en_backup.db'
@@ -33,6 +37,19 @@ def export_enex(db, context_dir, target_dir, single_notes=False):
     if single_notes:
         command += ' --single-notes'
     ShellOperation(commands=[command], working_dir=context_dir).run()
+
+
+@task
+def export_enex2(notes: List[NoteTO], context_dir: str, target_dir: str, single_notes=False):
+    note_exporter = NoteExporter(storage=None, target_dir=Path(context_dir),
+                                 single_notes=single_notes, export_trash=False,
+                                 no_export_date=False, overwrite=True)
+    print(context_dir)
+    notebooks = set(note.notebook for note in notes)
+    for nb in tqdm(notebooks):
+        current_notes = [note.note for note in notes if note.notebook.name == nb.name]
+        note_exporter._output_notebook(target_dir.split('/') + [nb.stack], nb.name, current_notes)
+
 
 @task
 def read_stacks(context_dir, p=lambda x: True):
@@ -108,8 +125,8 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
 
     out_db = store_to_db(context_dir, OUT_DB_CORR, notes_classified)
 
-    enex = 'enex'
-    export_enex(db=out_db, context_dir=context_dir, target_dir=enex)
+    enex = 'enex2'
+    export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=enex)
 
     for stack in read_stacks(context_dir):
          yarle(context_dir, source=stack, target=stack)
