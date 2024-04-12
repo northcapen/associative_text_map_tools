@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 from typing import List
@@ -22,6 +23,9 @@ OUT_DB_CORR = 'en_backup_corr.db'
 ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
 ALL_NOTES = lambda nb: True
 TEXT_MAPS = lambda nb: nb.stack in ['Core', 'Maps']
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class IdentityProcessor:
     def __init__(self):
@@ -47,8 +51,12 @@ def export_enex2(notes: List[NoteTO], context_dir: str, target_dir: str, single_
     print(context_dir)
     notebooks = set(note.notebook for note in notes)
     for nb in tqdm(notebooks):
+        logger.info(f'Exporting notebook {nb.name}')
         current_notes = [note.note for note in notes if note.notebook.name == nb.name]
-        note_exporter._output_notebook(target_dir.split('/') + [nb.stack], nb.name, current_notes)
+        pathes = target_dir.split('/')
+        if nb.stack:
+            pathes.append(nb.stack)
+        note_exporter._output_notebook(pathes, nb.name, current_notes)
 
 
 @task
@@ -123,7 +131,7 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
     links_fixed = fix_links(context_dir, notes_cleaned)
     notes_classified = enrich_data(links_fixed)
 
-    out_db = store_to_db(context_dir, OUT_DB_CORR, notes_classified)
+    #out_db = store_to_db(context_dir, OUT_DB_CORR, notes_classified)
 
     enex = 'enex2'
     export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=enex)
