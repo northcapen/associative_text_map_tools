@@ -102,7 +102,7 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
         #      q=q
         # )
 
-    notes_cleaned = clean_articles(context_dir, q, IN_DB)
+    notes_cleaned = clean_articles(context_dir, IN_DB, q)
     links_fixed = fix_links(context_dir, notes_cleaned)
     notes_classified = enrich_data(links_fixed)
 
