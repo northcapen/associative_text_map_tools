@@ -47,8 +47,22 @@ class NoteTO:
     @property
     def content(self):
         return self.note.content
+    
+    def as_dict(self):
+        return {
+            'id' : self.note.guid,
+            'title' : self.note.title, 'created': self.note.created, 'updated': self.note.updated,
+            'tagNames' : self.note.tagNames,
+            'active' : self.note.active,
+            'contentLength' : self.note.contentLength,
+            'content' : self.note.content,
+            'notebook' : self.notebook.name,
+            'stack' : self.notebook.stack
+        }
 
-def read_notes(cnx):
+
+
+def read_notes(cnx) -> pd.DataFrame:
     sql = f"""select n.guid, title, raw_note, n.name notebook, stack, notebook_guid
     from notes join notebooks n on notes.notebook_guid = n.guid
     where name not in ({iterable_to_sql_in(mostly_articles_notebooks)})

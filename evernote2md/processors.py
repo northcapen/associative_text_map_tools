@@ -1,5 +1,6 @@
 from typing import List
 
+import pandas as pd
 from prefect import task
 
 from evernote2md.link_corrector import LinkFixer, ArticleCleaner
@@ -23,7 +24,7 @@ def fix_links(context_dir, notes_cleaned: List[NoteTO]) -> List[NoteTO]:
     notes_p = note_metadata(context_dir, active=True)
     notes_trash = note_metadata(context_dir, active=True)
     link_fixer = LinkFixer(notes_p, notes_trash)
-    # pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
+    pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
 
     return traverse_notes(notes_cleaned, link_fixer)
 

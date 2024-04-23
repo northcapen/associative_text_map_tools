@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import List
 
+import pandas as pd
+
 from evernote_backup.note_exporter import NoteExporter
 
 from prefect import flow, task, serve
@@ -112,13 +114,16 @@ def db_to_parquet(context_dir):
     df = read_notebooks(db)
     df.to_parquet(f'{context_dir}/notebooks')
 
+@task
+def notes_to_parquet(context_dir, notes: List[NoteTO]):
+    df = pd.DataFrame([note.as_dict() for note in notes])
+    df.to_parquet(f'{context_dir}/notes')
+
 @flow
 def evernote_to_obsidian_flow(context_dir, aux=False):
     # exclusive_filter = lambda nb: nb.name in ['Self']
     q = ALL_NOTES
     if aux:
-        db_to_parquet(context_dir)
-
         enex = 'enex_single_notes'
         export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
 
@@ -128,6 +133,8 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
         # )
 
     notes_cleaned = clean_articles(context_dir, IN_DB, q)
+    notes_to_parquet(context_dir, notes_cleaned)
+
     links_fixed = fix_links(context_dir, notes_cleaned)
     notes_classified = enrich_data(links_fixed)
 
