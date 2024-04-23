@@ -51,7 +51,7 @@ def export_enex(db, context_dir, target_dir, single_notes=False):
 def export_enex2(notes: List[NoteTO], context_dir: str, target_dir: str, single_notes=False):
     note_exporter = NoteExporter(storage=None, target_dir=Path(context_dir),
                                  single_notes=single_notes, export_trash=False,
-                                 no_export_date=False, overwrite=True)
+                                 no_export_date=True, overwrite=True)
     print(context_dir)
     notebooks = set(note.notebook for note in notes)
     for nb in tqdm(notebooks):
