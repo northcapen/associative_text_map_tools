@@ -14,15 +14,11 @@ from tqdm import tqdm
 
 from evernote2md.cat_service import CatService
 from evernote2md.processors import clean_articles, fix_links, enrich_data
-from evernote_backup.note_storage import NoteStorage
-from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, NoteTO
-from utils import as_sqllite
+from notes_service import read_notes, mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'
 
 IN_DB = 'en_backup.db'
-OUT_DB = 'en_backup_nocorr.db'
-OUT_DB_CORR = 'en_backup_corr.db'
 
 ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
 ALL_NOTES = lambda nb: True
@@ -30,21 +26,6 @@ TEXT_MAPS = lambda nb: nb.stack in ['Core', 'Maps']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-class IdentityProcessor:
-    def __init__(self):
-        self.buffer = []
-
-    def transform(self, note):
-        return note
-
-
-@task
-def export_enex(db, context_dir, target_dir, single_notes=False):
-    command = f"evernote-backup export -d {db} --overwrite {target_dir}/"
-    if single_notes:
-        command += ' --single-notes'
-    ShellOperation(commands=[command], working_dir=context_dir).run()
 
 
 @task
@@ -107,17 +88,6 @@ def yarle(context_dir, source, target, root_dir='md'):
         working_dir=context_dir
     ).run()
 
-
-@task
-def db_to_parquet(context_dir):
-    db = as_sqllite(context_dir + '/' + IN_DB)
-
-    df = read_notes(db)
-    df.to_parquet(f'{context_dir}/raw_notes')
-
-    df = read_notebooks(db)
-    df.to_parquet(f'{context_dir}/notebooks')
-
 @task
 def notes_to_parquet(context_dir, notes: List[NoteTO]):
     df = pd.DataFrame([note.as_dict() for note in notes])
@@ -125,24 +95,13 @@ def notes_to_parquet(context_dir, notes: List[NoteTO]):
 
 @flow
 def evernote_to_obsidian_flow(context_dir, aux=False):
-    # exclusive_filter = lambda nb: nb.name in ['Self']
     q = ALL_NOTES
-    if aux:
-        enex = 'enex_single_notes'
-        export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
-
-        # orig_db = process_notes(
-        #      db=IN_DB, out_db_name=OUT_DB, context_dir=context_dir,
-        #      q=q
-        # )
 
     notes_cleaned = clean_articles(context_dir, IN_DB, q)
     notes_to_parquet(context_dir, notes_cleaned)
 
     links_fixed = fix_links(context_dir, notes_cleaned)
     notes_classified = enrich_data(links_fixed)
-
-    #out_db = store_to_db(context_dir, OUT_DB_CORR, notes_classified)
 
     enex = 'enex2'
     export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=enex)
@@ -151,25 +110,8 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
          yarle(context_dir, source=stack, target=stack)
 
 
-@task
-def store_to_db(context_dir, db, notes):
-    ShellOperation(commands=[f'cd {context_dir} && cp {IN_DB} {db}']).run()
-
-    out_db = as_sqllite(context_dir + '/' + db)
-    out_db.execute('delete from notes')
-    out_storage = NoteStorage(out_db)
-    for note in tqdm(notes):
-        out_storage.add_note(note.note)
-
-    return db
-
-
 @flow
 def adhoc_flow(context_dir):
-    # enex = 'enex_single_notes'
-    # export_enex(db=OUT_DB, context_dir=context_dir, target_dir=enex, single_notes=True)
-
-
     for stack in read_stacks(context_dir, p=lambda stack: stack == 'Core'):
         yarle(context_dir, stack, CatService().get_cat2(cat3=stack) + '/' + stack, root_dir='mdx')
 
