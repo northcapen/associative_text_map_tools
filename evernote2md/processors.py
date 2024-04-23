@@ -1,5 +1,6 @@
 import datetime
 import logging
+import pickle
 from typing import List
 
 import pandas as pd
@@ -12,15 +13,28 @@ from evernote2md.utils import as_sqllite
 from link_corrector import traverse_notes
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-@task(persist_result=True)
-def clean_articles(context_dir, db, q) -> List[NoteTO]:
+@task
+def db_to_pickle(context_dir, db, q):
     indb = as_sqllite(context_dir + '/' + db)
     notes = list(deep_notes_iterator(indb, q))
 
     x = max(n.note.updated for n in notes)
-    logger.info('Last known date: ', datetime.date.fromtimestamp(x/1000))
+    logger.info('Last known date: %s', datetime.date.fromtimestamp(x / 1000))
 
+    with open(f'{context_dir}/notes.pickle', 'wb') as f:
+        pickle.dump(notes, f)
+
+
+@task
+def read_pickled_notes(context_dir):
+    with open(f'{context_dir}/notes.pickle', 'rb') as f:
+        return pickle.load(f)
+
+
+@task(persist_result=True)
+def clean_articles(notes) -> List[NoteTO]:
     notes_cleaned = traverse_notes(notes, processor=ArticleCleaner())
     return notes_cleaned
 

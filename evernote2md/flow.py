@@ -13,7 +13,8 @@ from prefect_shell import ShellOperation
 from tqdm import tqdm
 
 from evernote2md.cat_service import CatService
-from evernote2md.processors import clean_articles, fix_links, enrich_data
+from evernote2md.processors import clean_articles, fix_links, enrich_data, db_to_pickle, \
+    read_pickled_notes
 from notes_service import read_notes, mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'
@@ -95,9 +96,9 @@ def notes_to_parquet(context_dir, notes: List[NoteTO]):
 
 @flow
 def evernote_to_obsidian_flow(context_dir, aux=False):
-    q = ALL_NOTES
+    notes = read_pickled_notes(context_dir)
 
-    notes_cleaned = clean_articles(context_dir, IN_DB, q)
+    notes_cleaned = clean_articles(notes)
     notes_to_parquet(context_dir, notes_cleaned)
 
     links_fixed = fix_links(context_dir, notes_cleaned)
@@ -111,9 +112,11 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
 
 
 @flow
-def adhoc_flow(context_dir):
-    for stack in read_stacks(context_dir, p=lambda stack: stack == 'Core'):
-        yarle(context_dir, stack, CatService().get_cat2(cat3=stack) + '/' + stack, root_dir='mdx')
+def db_to_pickle_flow(context_dir):
+    db_to_pickle(context_dir, IN_DB, ALL_NOTES)
+
+    # for stack in read_stacks(context_dir, p=lambda stack: stack == 'Core'):
+    #     yarle(context_dir, stack, CatService().get_cat2(cat3=stack) + '/' + stack, root_dir='mdx')
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(
@@ -122,6 +125,6 @@ if __name__ == '__main__':
     small = evernote_to_obsidian_flow.to_deployment(
         'evernote-to-obsidian-flow-small', parameters={'context_dir' : '../data/small'}
     )
-    adhoc_flow_full = adhoc_flow.to_deployment('adhoc-flow', parameters={'context_dir' : '../data/full'})
+    db_to_pickle = db_to_pickle_flow.to_deployment('db-to-pickle-flow', parameters={'context_dir' : '../data/full'})
 
-    serve(full, small, adhoc_flow_full)
+    serve(full, small, db_to_pickle)
