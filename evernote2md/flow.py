@@ -18,6 +18,8 @@ from evernote_backup.note_storage import NoteStorage
 from notes_service import read_notes, mostly_articles_notebooks, read_notebooks, NoteTO
 from utils import as_sqllite
 
+ENEX_FOLDER = 'enex2'
+
 IN_DB = 'en_backup.db'
 OUT_DB = 'en_backup_nocorr.db'
 OUT_DB_CORR = 'en_backup_corr.db'
@@ -67,8 +69,8 @@ def read_stacks(context_dir, p=lambda x: True):
 
     os.chdir(context_dir)
     x = [
-        stack for stack in os.listdir('enex')
-        if os.path.isdir(os.path.join('enex', stack)) and p(stack)
+        stack for stack in os.listdir(ENEX_FOLDER)
+        if os.path.isdir(os.path.join(ENEX_FOLDER, stack)) and p(stack)
     ]
     os.chdir(original_dir)  # Change back to the original working directory
     return x
@@ -82,7 +84,7 @@ def yarle(context_dir, source, target, root_dir='md'):
     with open('evernote2md/config.json', 'r') as file:
         data = json.load(file)
 
-    data['enexSources'] = ['enex/' + source]
+    data['enexSources'] = [ENEX_FOLDER + '/' + source]
     data['templateFile'] = os.path.abspath('evernote2md/noteTemplate.tmpl')
 
     # Step 5: Open the config.json file in write mode
