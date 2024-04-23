@@ -98,6 +98,8 @@ def yarle(context_dir, source, target, root_dir='md'):
     #source_enex = source[:-len('.enex')]
     ShellOperation(
         commands=[
+            # replace ![[ to [[
+            "find md_temp -type f -name '*.md' -exec sed -i '' 's/!\[\[/\[\[/g' {} +",
             f'rm -rf "{root_dir}/{target}"',
             f'mkdir -p "{root_dir}/{target}"',
             f'mv md_temp/notes/* "{root_dir}/{target}"'
