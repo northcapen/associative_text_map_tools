@@ -1,3 +1,5 @@
+import datetime
+import logging
 from typing import List
 
 import pandas as pd
@@ -9,10 +11,15 @@ from evernote2md.notes_service import note_metadata, deep_notes_iterator, NoteTO
 from evernote2md.utils import as_sqllite
 from link_corrector import traverse_notes
 
+logger = logging.getLogger(__name__)
+
 @task(persist_result=True)
 def clean_articles(context_dir, db, q) -> List[NoteTO]:
     indb = as_sqllite(context_dir + '/' + db)
     notes = list(deep_notes_iterator(indb, q))
+
+    x = max(n.note.updated for n in notes)
+    logger.info('Last known date: ', datetime.date.fromtimestamp(x/1000))
 
     notes_cleaned = traverse_notes(notes, processor=ArticleCleaner())
     return notes_cleaned
