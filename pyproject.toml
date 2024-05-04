@@ -22,3 +22,4 @@ dvc = "3.50.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "8.1.1"
+flake8 = "6.1.0"
