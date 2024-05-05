@@ -2,7 +2,7 @@ import datetime
 import pickle
 import sqlite3
 from sqlite3 import Connection
-from typing import List, Callable, Iterable
+from typing import List, Callable, Iterable, Dict
 
 import pandas as pd
 from prefect import task
@@ -47,6 +47,9 @@ def write_notes_dataframe(context_dir, notes: List[NoteTO]):
     df = pd.DataFrame([note.as_dict() for note in notes])
     df.to_parquet(f'{context_dir}/{NOTES_PARQUET}')
 
+@task
+def write_links_dataframe(context_dir, links: List[Dict]):
+    pd.DataFrame(links).to_csv(f'{context_dir}/links.csv')
 
 @task
 def read_pickled_notes(context_dir: str) -> List[NoteTO]:

@@ -4,7 +4,10 @@ import os
 from pathlib import Path
 from typing import List
 
-from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, read_pickled_notes, read_notes_dataframe
+import pandas as pd
+
+from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, \
+    read_pickled_notes, read_notes_dataframe, write_links_dataframe
 from evernote_backup.note_exporter import NoteExporter
 
 from prefect import flow, task, serve
@@ -102,8 +105,10 @@ def evernote_to_obsidian_flow(context_dir,):
     write_notes_dataframe(context_dir, notes=notes_cleaned)
 
     raw_notes_all = read_notes_dataframe(context_dir)
-    links_fixed = fix_links(context_dir, raw_notes_all, notes_cleaned)
-    notes_classified = enrich_data(links_fixed)
+    notes_w_fixed_links, links = fix_links(raw_notes_all, notes_cleaned)
+    write_links_dataframe(context_dir, links=links)
+
+    notes_classified = enrich_data(notes_w_fixed_links)
 
     enex = 'enex2'
     export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=enex)
