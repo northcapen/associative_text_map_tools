@@ -59,6 +59,9 @@ def read_stacks(context_dir, p=lambda x: True):
 
 @task
 def yarle(context_dir, source, target, root_dir='md'):
+    if on_ci(context_dir):
+        return
+
     print(f'Processing stack {source}')
 
     # Step 2: Open the config.json file in read mode
@@ -87,6 +90,11 @@ def yarle(context_dir, source, target, root_dir='md'):
         ],
         working_dir=context_dir
     ).run()
+
+
+def on_ci(context_dir):
+    return '_ci' in context_dir
+
 
 @task
 def notes_to_parquet(context_dir, notes: List[NoteTO]):
