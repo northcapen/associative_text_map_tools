@@ -34,5 +34,8 @@ jobs:
 #        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
 #        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 #    - name: Test with pytest
-    - run: |
-        PYTHONPATH=. pytest
+    - run: PYTHONPATH=. pytest
+    - run: mkdir -p data/small_ci
+    - run: cp data_persistent/notes_small.pickle data/small_ci/notes.pickle
+    - run: cp data_persistent/raw_notes_small.parquet data/small_ci/raw_notes.parquet
+    - run: PYTHONPATH=. python evernote2md/runner.py small_ci
