@@ -16,6 +16,7 @@ DEFAULT_FORMAT = 'csv'
 NOTES_PARQUET = 'notes.parquet'
 NOTES_CSV = 'notes.csv'
 NOTES_PICKLE = 'notes.pickle'
+LINKS_CSV = 'links.csv'
 
 
 @task
@@ -58,7 +59,8 @@ def write_notes_dataframe(context_dir, notes: List[NoteTO], include_content=Fals
 
 @task
 def write_links_dataframe(context_dir, links: List[Dict]):
-    pd.DataFrame(links).to_csv(f'{context_dir}/links.csv')
+    pd.DataFrame(links).to_csv(f'{context_dir}/{LINKS_CSV}', index=False)
+
 
 @task
 def read_pickled_notes(context_dir: str) -> List[NoteTO]:
@@ -74,6 +76,10 @@ def read_notes_dataframe(context_dir: str, format=DEFAULT_FORMAT) -> pd.DataFram
         return pd.read_parquet(f'{context_dir}/{NOTES_PARQUET}')
     else:
         raise Exception('unsupported format: {}'.format(format))
+
+@task
+def read_links_dataframe(context_dir: str):
+    return pd.read_csv(f'{context_dir}/{LINKS_CSV}')
 
 def convert_notebooks_db_to_dataframe(cnx: Connection):
     def to_row(notebook):
