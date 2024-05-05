@@ -1,5 +1,6 @@
 import datetime
 import pickle
+import sqlite3
 from typing import List
 
 import pandas as pd
@@ -7,7 +8,6 @@ from prefect import task
 
 from evernote2md.notes_service import NoteTO, deep_notes_iterator
 from evernote2md.processors import logger
-from evernote2md.utils import as_sqllite
 
 NOTES_PARQUET = 'notes.parquet'
 NOTES_PICKLE = 'notes.pickle'
@@ -15,7 +15,7 @@ NOTES_PICKLE = 'notes.pickle'
 
 @task
 def convert_db_to_pickle(context_dir, db, q):
-    indb = as_sqllite(context_dir + '/' + db)
+    indb = _as_sqllite(context_dir + '/' + db)
     notes = list(deep_notes_iterator(indb, q))
 
     x = max(n.note.updated for n in notes)
@@ -23,6 +23,11 @@ def convert_db_to_pickle(context_dir, db, q):
 
     with open(f'{context_dir}/notes.pickle', 'wb') as f:
         pickle.dump(notes, f)
+
+def _as_sqllite(db_path):
+    cnx = sqlite3.connect(db_path)
+    cnx.row_factory = sqlite3.Row
+    return cnx
 
 
 @task

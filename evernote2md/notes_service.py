@@ -3,18 +3,14 @@ from dataclasses import dataclass
 import logging
 from sqlite3 import Connection
 
-from typing import Iterable, Callable, Dict, Any
+from typing import Iterable, Callable
 
-import lzma
-import pickle
 from evernote.edam.type.ttypes import Note, Notebook
 
 from evernote_backup.note_storage import NoteStorage, NoteBookStorage
 
 import pandas as pd
-from tqdm import tqdm
 
-from utils import iterable_to_sql_in
 
 mostly_articles_notebooks = ['Life Mapping External', 'Articles Archive', 'IT Articles', 'Articles',
                              'ML Articles']
