@@ -11,7 +11,10 @@ from evernote2md.notes_service import NoteTO
 from evernote2md.tasks.transforms import logger
 from evernote_backup.note_storage import NoteBookStorage, NoteStorage
 
+DEFAULT_FORMAT = 'csv'
+
 NOTES_PARQUET = 'notes.parquet'
+NOTES_CSV = 'notes.csv'
 NOTES_PICKLE = 'notes.pickle'
 
 
@@ -43,9 +46,15 @@ def _deep_notes_iterator(cnx: Connection, condition: Callable) -> Iterable[NoteT
 
 
 @task
-def write_notes_dataframe(context_dir, notes: List[NoteTO]):
-    df = pd.DataFrame([note.as_dict() for note in notes])
-    df.to_parquet(f'{context_dir}/{NOTES_PARQUET}')
+def write_notes_dataframe(context_dir, notes: List[NoteTO], include_content=False, format=DEFAULT_FORMAT):
+    df = pd.DataFrame([note.as_dict(include_content=include_content) for note in notes])
+    if format == 'parquet':
+        df.to_parquet(f'{context_dir}/{NOTES_PARQUET}')
+    elif format == 'csv':
+        df.to_csv(f'{context_dir}/{NOTES_CSV}')
+    else:
+        raise Exception('unsupported format: {}'.format(format))
+
 
 @task
 def write_links_dataframe(context_dir, links: List[Dict]):
@@ -58,8 +67,13 @@ def read_pickled_notes(context_dir: str) -> List[NoteTO]:
 
 
 @task
-def read_notes_dataframe(context_dir: str) -> pd.DataFrame:
-    return pd.read_parquet(f'{context_dir}/{NOTES_PARQUET}')
+def read_notes_dataframe(context_dir: str, format=DEFAULT_FORMAT) -> pd.DataFrame:
+    if format == 'csv':
+        return pd.read_csv(f'{context_dir}/{NOTES_CSV}')
+    elif format == 'parquet':
+        return pd.read_parquet(f'{context_dir}/{NOTES_PARQUET}')
+    else:
+        raise Exception('unsupported format: {}'.format(format))
 
 def convert_notebooks_db_to_dataframe(cnx: Connection):
     def to_row(notebook):

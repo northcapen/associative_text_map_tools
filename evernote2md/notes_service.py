@@ -42,14 +42,14 @@ class NoteTO:
     def content(self):
         return self.note.content
     
-    def as_dict(self):
+    def as_dict(self, include_content):
         return {
             'id' : self.note.guid,
             'title' : self.note.title, 'created': self.note.created, 'updated': self.note.updated,
             'tagNames' : self.note.tagNames,
             'active' : self.note.active,
             'contentLength' : self.note.contentLength,
-            'content' : self.note.content,
+            'content' : self.note.content if include_content else None,
             'notebook' : self.notebook.name,
             'stack' : self.notebook.stack
         }
