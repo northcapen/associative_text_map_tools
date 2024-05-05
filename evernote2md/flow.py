@@ -63,11 +63,11 @@ def yarle(context_dir, source, target, root_dir='md'):
     print(f'Processing stack {source}')
 
     # Step 2: Open the config.json file in read mode
-    with open('evernote2md/config.json', 'r') as file:
+    with open('evernote2md/yarle/config.json', 'r') as file:
         data = json.load(file)
 
     data['enexSources'] = [ENEX_FOLDER + '/' + source]
-    data['templateFile'] = os.path.abspath('evernote2md/noteTemplate.tmpl')
+    data['templateFile'] = os.path.abspath('evernote2md/yarle/noteTemplate.tmpl')
 
     # Step 5: Open the config.json file in write mode
     with open(f'{context_dir}/config.json', 'w') as file:
