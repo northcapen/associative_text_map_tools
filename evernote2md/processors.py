@@ -32,6 +32,9 @@ def read_pickled_notes(context_dir):
     with open(f'{context_dir}/notes.pickle', 'rb') as f:
         return pickle.load(f)
 
+def read_raw_notes(context_dir):
+    return pd.read_parquet(f'{context_dir}/raw_notes.parquet')
+
 
 @task(persist_result=True)
 def clean_articles(notes) -> List[NoteTO]:
@@ -42,8 +45,9 @@ def clean_articles(notes) -> List[NoteTO]:
 def fix_links(context_dir, notes_cleaned: List[NoteTO]) -> List[NoteTO]:
     from link_corrector import traverse_notes
 
-    notes_p = note_metadata(context_dir, active=True)
-    notes_trash = note_metadata(context_dir, active=True)
+    raw_notes_all = read_raw_notes(context_dir)
+    notes_p = note_metadata(raw_notes_all, active=True)
+    notes_trash = note_metadata(raw_notes_all, active=True)
     link_fixer = LinkFixer(notes_p, notes_trash)
     pd.DataFrame(link_fixer.buffer).to_csv(f'{context_dir}/links.csv')
 

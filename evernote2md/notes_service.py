@@ -111,9 +111,8 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
 def iter_notes_trash(cnx):
     return NoteStorage(cnx).iter_notes_trash()
 
-def note_metadata(context_dir, active=True) -> Dict[Any, Note]:
-    notes_parquet = pd.read_parquet(f'{context_dir}/raw_notes').query('active == @active')
-    print(notes_parquet.columns)
+def note_metadata(raw_notes, active=True) -> Dict[Any, Note]:
+    notes_parquet = raw_notes.query('active == @active')
     buff = {}
     for note in notes_parquet.itertuples():
          # noinspection PyUnresolvedReferences

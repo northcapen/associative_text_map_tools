@@ -76,7 +76,7 @@ def yarle(context_dir, source, target, root_dir='md'):
 
     command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
     print(command)
-    ShellOperation(commands=[command], working_dir=context_dir, stream_output=False).run()
+    ShellOperation(commands=[command], working_dir=context_dir, stream_output=True).run()
     #source_enex = source[:-len('.enex')]
     ShellOperation(
         commands=[
