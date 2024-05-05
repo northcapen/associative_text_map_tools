@@ -15,7 +15,7 @@ from prefect_shell import ShellOperation
 from tqdm import tqdm
 
 from evernote2md.tasks.transforms import clean_articles, fix_links, enrich_data
-from notes_service import mostly_articles_notebooks, NoteTO
+from evernote2md.notes_service import mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'
 
