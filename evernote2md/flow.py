@@ -4,16 +4,14 @@ import os
 from pathlib import Path
 from typing import List
 
-import pandas as pd
-
+from evernote2md.converts import write_notes_dataframe, convert_db_to_pickle, read_pickled_notes, read_notes_dataframe
 from evernote_backup.note_exporter import NoteExporter
 
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 from tqdm import tqdm
 
-from evernote2md.processors import clean_articles, fix_links, enrich_data, db_to_pickle, \
-    read_pickled_notes
+from evernote2md.processors import clean_articles, fix_links, enrich_data
 from notes_service import mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'
@@ -96,19 +94,15 @@ def on_ci(context_dir):
     return '_ci' in context_dir
 
 
-@task
-def notes_to_parquet(context_dir, notes: List[NoteTO]):
-    df = pd.DataFrame([note.as_dict() for note in notes])
-    df.to_parquet(f'{context_dir}/notes')
-
 @flow
-def evernote_to_obsidian_flow(context_dir, aux=False):
+def evernote_to_obsidian_flow(context_dir,):
     notes = read_pickled_notes(context_dir)
 
     notes_cleaned = clean_articles(notes)
-    notes_to_parquet(context_dir, notes_cleaned)
+    write_notes_dataframe(context_dir, notes=notes_cleaned)
 
-    links_fixed = fix_links(context_dir, notes_cleaned)
+    raw_notes_all = read_notes_dataframe(context_dir)
+    links_fixed = fix_links(context_dir, raw_notes_all, notes_cleaned)
     notes_classified = enrich_data(links_fixed)
 
     enex = 'enex2'
@@ -120,10 +114,8 @@ def evernote_to_obsidian_flow(context_dir, aux=False):
 
 @flow
 def db_to_pickle_flow(context_dir):
-    db_to_pickle(context_dir, IN_DB, ALL_NOTES)
+    convert_db_to_pickle(context_dir, db=IN_DB, q=ALL_NOTES)
 
-    # for stack in read_stacks(context_dir, p=lambda stack: stack == 'Core'):
-    #     yarle(context_dir, stack, CatService().get_cat2(cat3=stack) + '/' + stack, root_dir='mdx')
 
 if __name__ == '__main__':
     full = evernote_to_obsidian_flow.to_deployment(

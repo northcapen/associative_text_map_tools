@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import logging
+from sqlite3 import Connection
 
 from typing import Iterable, Callable, Dict, Any
 
@@ -60,35 +61,6 @@ class NoteTO:
             'stack' : self.notebook.stack
         }
 
-
-
-def read_notes(cnx) -> pd.DataFrame:
-    sql = f"""select n.guid, title, raw_note, n.name notebook, stack, notebook_guid
-    from notes join notebooks n on notes.notebook_guid = n.guid
-    where name not in ({iterable_to_sql_in(mostly_articles_notebooks)})
-    """
-    cur = cnx.execute(sql)
-    result = cur.fetchall()
-    def to_note(row):
-        note = pickle.loads(lzma.decompress(row["raw_note"]))
-
-        #return note
-        return { 'id' : note.guid,
-            'title' : note.title, 'created': note.created, 'updated': note.updated,
-            'tagNames' : note.tagNames, 'active' : note.active, 'contentLength' : note.contentLength,
-            'content' : note.content,
-            'notebook' : row['notebook'],
-            'stack' : row['stack']
-        }
-
-    notes_df = pd.DataFrame([to_note(row) for row in tqdm(result)])
-
-    df = notes_df.query('active').copy()
-    df['created'] = pd.to_datetime(df['created'], unit='ms')
-    df['updated'] = pd.to_datetime(df['updated'], unit='ms')
-
-    return df
-
 def read_notebooks(cnx):
     def to_row(notebook):
         return {'guid': notebook.guid, 'name': notebook.name, 'stack': notebook.stack}
@@ -98,7 +70,7 @@ def read_notebooks(cnx):
 
 
 
-def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
+def deep_notes_iterator(cnx: Connection, condition: Callable) -> Iterable[NoteTO]:
     in_storage = NoteStorage(cnx)
     in_nb_storage = NoteBookStorage(cnx)
 
@@ -106,16 +78,4 @@ def deep_notes_iterator(cnx, condition: Callable) -> Iterable[NoteTO]:
         logger.debug(f'Processing {nb.name}')
         if condition(nb):
             for n in in_storage.iter_notes(nb.guid):
-                yield NoteTO(n, nb, None)
-
-def iter_notes_trash(cnx):
-    return NoteStorage(cnx).iter_notes_trash()
-
-def note_metadata(raw_notes, active=True) -> Dict[Any, Note]:
-    notes_parquet = raw_notes.query('active == @active')
-    buff = {}
-    for note in notes_parquet.itertuples():
-         # noinspection PyUnresolvedReferences
-         buff[note.id] = Note(guid=note.id, title=note.title)
-
-    return buff
+                yield NoteTO(n, nb, status=None)
