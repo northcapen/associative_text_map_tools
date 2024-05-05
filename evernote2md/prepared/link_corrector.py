@@ -3,14 +3,14 @@ import traceback
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from typing import Optional, Dict, List, Set, Any
+from typing import Optional, Dict, List, Any
 
 import pandas as pd
 from evernote.edam.type.ttypes import Note
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
-from notes_service import NoteTO
+from evernote2md.notes_service import NoteTO
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

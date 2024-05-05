@@ -4,14 +4,14 @@ import os
 from pathlib import Path
 from typing import List
 
-from evernote2md.converts import write_notes_dataframe, convert_db_to_pickle, read_pickled_notes, read_notes_dataframe
+from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, read_pickled_notes, read_notes_dataframe
 from evernote_backup.note_exporter import NoteExporter
 
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 from tqdm import tqdm
 
-from evernote2md.processors import clean_articles, fix_links, enrich_data
+from evernote2md.tasks.transforms import clean_articles, fix_links, enrich_data
 from notes_service import mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'

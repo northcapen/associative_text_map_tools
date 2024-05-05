@@ -1,6 +1,6 @@
 from typing import Optional
 
-from evernote2md.link_corrector import NoteTransformer
+from evernote2md.prepared.link_corrector import NoteTransformer
 from evernote2md.notes_service import NoteTO
 
 

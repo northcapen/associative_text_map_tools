@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from evernote2md.link_corrector import find_linked_note, LinkFixer
+from evernote2md.prepared.link_corrector import find_linked_note, LinkFixer
 from dataclasses import dataclass
 
 import xml.etree.ElementTree as ET

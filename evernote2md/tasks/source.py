@@ -7,7 +7,7 @@ import pandas as pd
 from prefect import task
 
 from evernote2md.notes_service import NoteTO, deep_notes_iterator
-from evernote2md.processors import logger
+from evernote2md.tasks.transforms import logger
 
 NOTES_PARQUET = 'notes.parquet'
 NOTES_PICKLE = 'notes.pickle'

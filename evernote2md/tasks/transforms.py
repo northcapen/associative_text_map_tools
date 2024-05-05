@@ -5,10 +5,10 @@ import pandas as pd
 from evernote.edam.type.ttypes import Note
 from prefect import task
 
-from evernote2md.link_corrector import LinkFixer, ArticleCleaner
-from evernote2md.note_classifier import NoteClassifier
+from evernote2md.prepared.link_corrector import LinkFixer, ArticleCleaner
+from evernote2md.prepared.note_classifier import NoteClassifier
 from evernote2md.notes_service import NoteTO
-from link_corrector import traverse_notes
+from evernote2md.prepared.link_corrector import traverse_notes
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -22,7 +22,7 @@ def clean_articles(notes) -> List[NoteTO]:
 
 @task
 def fix_links(context_dir: str, notes_df: pd.DataFrame, notes: List[NoteTO]) -> List[NoteTO]:
-    from link_corrector import traverse_notes
+    from evernote2md.prepared.link_corrector import traverse_notes
 
     notes_p = _note_metadata(notes_df, active=True)
     notes_trash = _note_metadata(notes_df, active=True)
