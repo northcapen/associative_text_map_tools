@@ -1,16 +1,13 @@
 from dataclasses import dataclass
 
 import logging
-from sqlite3 import Connection
-
-from typing import Iterable, Callable
-
 from evernote.edam.type.ttypes import Note, Notebook
 
-from evernote_backup.note_storage import NoteStorage, NoteBookStorage
+from evernote_backup.note_storage import NoteBookStorage
 
 import pandas as pd
 
+#todo rename to domain.py
 
 mostly_articles_notebooks = ['Life Mapping External', 'Articles Archive', 'IT Articles', 'Articles',
                              'ML Articles']
@@ -57,21 +54,10 @@ class NoteTO:
             'stack' : self.notebook.stack
         }
 
+#todo move to source
 def read_notebooks(cnx):
     def to_row(notebook):
         return {'guid': notebook.guid, 'name': notebook.name, 'stack': notebook.stack}
 
     df = pd.DataFrame([to_row(nb) for nb in NoteBookStorage(cnx).iter_notebooks()])
     return df
-
-
-
-def deep_notes_iterator(cnx: Connection, condition: Callable) -> Iterable[NoteTO]:
-    in_storage = NoteStorage(cnx)
-    in_nb_storage = NoteBookStorage(cnx)
-
-    for nb in list(in_nb_storage.iter_notebooks()):
-        logger.debug(f'Processing {nb.name}')
-        if condition(nb):
-            for n in in_storage.iter_notes(nb.guid):
-                yield NoteTO(n, nb, status=None)
