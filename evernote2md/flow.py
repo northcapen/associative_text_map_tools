@@ -12,10 +12,9 @@ from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 from tqdm import tqdm
 
-from evernote2md.cat_service import CatService
 from evernote2md.processors import clean_articles, fix_links, enrich_data, db_to_pickle, \
     read_pickled_notes
-from notes_service import read_notes, mostly_articles_notebooks, NoteTO
+from notes_service import mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'
 
