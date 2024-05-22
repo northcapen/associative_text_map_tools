@@ -47,6 +47,43 @@
         context.save();
         context.globalAlpha = 0.6;
         context.strokeStyle = "#999";
+          .force("charge", d3.forceManyBody())
+          .force("center", d3.forceCenter(width / 2, height / 2))
+          .on("tick", draw);
+
+      // Create the canvas.
+      const dpi = devicePixelRatio; // _e.g._, 2 for retina screens
+      const canvas = d3.create("canvas")
+          .attr("width", dpi * width)
+          .attr("height", dpi * height)
+          .attr("style", `width: ${width}px; max-width: 100%; height: auto;`)
+        .node();
+
+      const context = canvas.getContext("2d");
+      context.scale(dpi, dpi);
+
+      function draw() {
+        context.clearRect(0, 0, width, height);
+
+        context.save();
+        context.globalAlpha = 0.6;
+        context.strokeStyle = "#999";
+        context.beginPath();
+        links.forEach(drawLink);
+        context.stroke();
+        context.restore();
+
+        context.save();
+        context.strokeStyle = "#fff";
+        context.globalAlpha = 1;
+        nodes.forEach(node => {
+          context.beginPath();
+          drawNode(node)
+          context.fillStyle = color(node.group);
+          context.strokeStyle = "#fff";
+          context.fill();
+          context.stroke();
+        });
         context.beginPath();
         links.forEach(drawLink);
         context.stroke();

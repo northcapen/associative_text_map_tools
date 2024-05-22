@@ -29,28 +29,35 @@ def build_graph_ml(context_dir, notes, links):
     G.add_nodes_from(vertices)
     G.add_edges_from(edges)
 
-    connected_components = list(nx.connected_components(G.to_undirected()))
-    G_main = connected_components[6]
-    # a = sorted(list(nx.simple_cycles(G)), key=lambda s: len(s))
+    connected_components = sorted(nx.connected_components(G.to_undirected()), key=len, reverse=True)
+    largest_component = connected_components[0]
+
+    G_main = G.subgraph(largest_component).copy()
+    nx.write_graphml(G, f'{context_dir}/notes.graphml')
+    nx.write_graphml(G_main, f'{context_dir}/notes_main.graphml')
     # nx.write_gexf(G, 'notes.gexf')
-    nx.write_graphml(G, 'notes_main.graphml')
+    return G_main
 
 @task
-def build_d3_json(context_dir, notes, links):
+def build_d3_json(context_dir, notes, links, G_main):
     output_json = context_dir + '/d3.json'
 
-    links = links.query('~to_guid.isnull()')
+    print(G_main.nodes)
+
     nodes_list = [{
         "id": row["title"],
         "group": 1
-    } for index, row in notes.iterrows()]
+    } for index, row in notes.iterrows() if row["id"] in G_main.nodes]
+    links = links.query('~to_guid.isnull()')
+
 
     # Process links DataFrame
     links_list = [{
         "source": row["from_title"],
         "target": row["to_new"] if pd.notna(row["to_new"]) else row["to_old"],
         "value": 1  # Assuming a default value of 1 for all links; adjust as necessary
-    } for index, row in links.iterrows()]
+    } for index, row in links.iterrows() if row["from_guid"] in G_main.nodes and row[
+        "to_guid"] in G_main.nodes]
 
     # Combine into a single dictionary
     output_dict = {
@@ -70,6 +77,6 @@ def build_graph_stuff(context_dir):
     notes = read_notes_dataframe(context_dir)
     links = read_links_dataframe(context_dir)
 
-    build_graph_ml(context_dir, notes, links)
-    build_d3_json(context_dir, notes, links)
+    G_main = build_graph_ml(context_dir, notes, links)
+    build_d3_json(context_dir, notes, links, G_main)
     #build_cosma()
