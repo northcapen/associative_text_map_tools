@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-@task(persist_result=True)
+@task(persist_result=False)
 def clean_articles(notes) -> List[NoteTO]:
     notes_cleaned = traverse_notes(notes, processor=ArticleCleaner())
     return notes_cleaned
