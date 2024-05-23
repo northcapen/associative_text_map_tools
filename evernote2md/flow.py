@@ -25,6 +25,9 @@ ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
 ALL_NOTES = lambda nb: True
 TEXT_MAPS = lambda nb: nb.stack in ['Core', 'Maps']
 
+def specific_notebook(name: str):
+    return lambda n: n.notebook.name == name
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -99,7 +102,7 @@ def on_ci(context_dir):
 
 @flow
 def evernote_to_obsidian_flow(context_dir,):
-    notes = read_pickled_notes(context_dir)
+    notes = read_pickled_notes(context_dir, predicate=specific_notebook('Demand Ztk'))
 
     notes_cleaned = clean_articles(notes)
     write_notes_dataframe(context_dir, notes=notes_cleaned)

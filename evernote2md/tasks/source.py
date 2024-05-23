@@ -63,9 +63,13 @@ def write_links_dataframe(context_dir, links: List[Dict]):
 
 
 @task
-def read_pickled_notes(context_dir: str) -> List[NoteTO]:
+def read_pickled_notes(context_dir: str, predicate: Callable) -> List[NoteTO]:
     with open(f'{context_dir}/{NOTES_PICKLE}', 'rb') as f:
-        return pickle.load(f)
+        res = pickle.load(f)
+
+    if predicate is None:
+        return res
+    return [n for n in res if predicate(n)]
 
 
 @task
