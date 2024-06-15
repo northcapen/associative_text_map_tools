@@ -1,8 +1,8 @@
 from typing import Optional
 
+import numpy as np
 import pandas as pd
-from evernote.edam.type.ttypes import Notebook
-from prefect import task
+from pandas import DataFrame
 
 from evernote2md.prepared.link_corrector import NoteTransformer
 from evernote2md.notes_service import NoteTO
@@ -13,36 +13,36 @@ class NoteClassifier(NoteTransformer):
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
         pass
 
+
 def notebook_classifier(context_dir):
     notebooks_df = pd.read_parquet(context_dir + '/notebooks')
-    notebooks_df['tags'] = ''
-    for i, r in enumerate(notebooks_df.to_dict(orient='records')):
-        tags = classify_notebook(Notebook(guid=r['guid'], name=r['name'], stack=r['stack']))
-        notebooks_df.loc[i, 'tags'] = ','.join(tags)
+    classify_notebook(notebooks_df)
 
-    notebooks_df['tags'].str.split(',', expand=True)
+    notebooks_df.to_csv('notebooks2.csv')
 
 
-def classify_notebook(notebook: Notebook):
-    tagNames = []
+def classify_notebook(nb_df: DataFrame):
+    objective = (nb_df.stack == 'Techs') | (nb_df.name.str.contains('Ztk'))
+    nb_df['objective'] = np.where(objective, 'objective', 'subjective')
 
-    objective = notebook.stack == 'Techs' or 'Ztk' in notebook.name
-    tagNames.append('objective' if objective else 'subjective')
+    shortTerm = (nb_df.stack == 'Operations') | (nb_df.stack == 'Simple')
+    nb_df['shortTerm'] = np.where(shortTerm, 'short', 'long')
 
-    shortTerm = notebook.stack in ['Operations', 'Simple']
-    tagNames.append('short-term' if shortTerm else 'long-term')
+    articles = nb_df.name.str.contains('Articles')
+    nb_df['articles'] = np.where(articles, 'other', 'me')
 
-    articles = 'Articles' in notebook.name
-    tagNames.append('authored_by_other' if articles else 'authored_by_me')
-
-    pro = notebook.stack == 'Professional'
     pro_keywords = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
-    pro2 = any(keyword in notebook.name for keyword in pro_keywords)
-    tagNames.append('it-specific' if pro or pro2 else 'not-it-specific')
+    pattern = '|'.join(pro_keywords)
+    # Check if 'stack' is 'Professional'
+    pro = nb_df['stack'] == 'Professional'
 
-    more_external = 'LJ' in notebook.name or objective
-    tagNames.append('more-external' if more_external else 'less-external')
-    return tagNames
+    # Check if any keyword is in 'name'
+    pro2 = nb_df['name'].str.contains(pattern)
+    nb_df['it-specific'] = np.where(pro | pro2, 'true', 'false')
+
+    # Combine conditions
+    more_external = nb_df.name.str.contains('LJ') | objective
+    nb_df['more_external'] = np.where(more_external, 'more-external', 'less-external')
 
 
 if __name__ == '__main__':
