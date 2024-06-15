@@ -62,7 +62,7 @@ def read_stacks(context_dir, p=lambda x: True):
 
 
 @task
-def yarle(context_dir, source, target, root_dir='md'):
+def yarle(context_dir, source, target, root_dir='md', stream_output=False):
     if on_ci(context_dir):
         return
 
@@ -72,7 +72,10 @@ def yarle(context_dir, source, target, root_dir='md'):
     with open('evernote2md/yarle/config.json', 'r') as file:
         data = json.load(file)
 
-    data['enexSources'] = [ENEX_FOLDER + '/' + source]
+    folder_source = ENEX_FOLDER + '/' + source
+    logger.info(f"Processing {len(os.listdir(context_dir + '/' + folder_source))} notes")
+
+    data['enexSources'] = [folder_source]
     data['templateFile'] = os.path.abspath('evernote2md/yarle/noteTemplate.tmpl')
 
     # Step 5: Open the config.json file in write mode
@@ -81,8 +84,8 @@ def yarle(context_dir, source, target, root_dir='md'):
         json.dump(data, file, indent=4)
 
     command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
-    print(command)
-    ShellOperation(commands=[command], working_dir=context_dir, stream_output=True).run()
+    logger.debug(command)
+    ShellOperation(commands=[command], working_dir=context_dir, stream_output=stream_output).run()
     #source_enex = source[:-len('.enex')]
     ShellOperation(
         commands=[
