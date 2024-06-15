@@ -22,24 +22,33 @@ def notebook_classifier(context_dir):
 
 
 def classify_notebook(notebooks: DataFrame):
-    objective = (notebooks.stack == 'Techs') | (notebooks.name.str.contains('Ztk'))
+    techs = notebooks.stack == 'Techs'
+    objective = (techs) | (notebooks.name.str.contains('Ztk'))
     notebooks['objective'] = np.where(objective, 'objective', 'subjective')
 
     shortTerm = (notebooks.stack == 'Operations') | (notebooks.stack == 'Simple')
     notebooks['longetivity'] = np.where(shortTerm, 'short', 'long')
     notebooks['authorship'] = np.where(notebooks.name.str.contains('Articles'), 'other', 'me')
 
-    pro_keywords = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
-    pattern = '|'.join(pro_keywords)
+    ex_work_projects = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
     pro = notebooks['stack'] == 'Professional'
-    pro2 = notebooks['name'].str.contains(pattern)
-    notebooks['it-specific'] = np.where(pro | pro2, 'yes', 'no')
+    pro_ex = notebooks['name'].str.contains('|'.join(ex_work_projects))
+    pro_rubbles = notebooks['name'].str.contains('|'.join(ex_work_projects))
+    notebooks['it-specific'] = np.where(pro | pro_ex | pro_rubbles | techs, 'yes', 'no')
 
     # Combine conditions
     more_external = notebooks.name.str.contains('LJ') | objective
     notebooks['externality'] = np.where(more_external, 'more', 'less')
-    journals = notebooks.name == 'Daily'
+    journals = notebooks.name == 'Dailys'
     notebooks['journals'] = np.where(journals, 'yes', 'no')
+
+    private = journals | (notebooks.name == 'Romance')
+    confidential = pro_ex | pro_rubbles
+    public = objective
+
+    notebooks['sensitivity'] = np.where(private, 'private', np.where(confidential, 'confidential',
+                                                                     np.where(public, public,
+                                                                              'sensitive')))
 
 
 if __name__ == '__main__':
