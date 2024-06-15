@@ -8,7 +8,7 @@ main_flow_small:
 	PYTHONPATH=. .venv/bin/python evernote2md/runner.py small db_to_pickle
 
 main_flow_full:
-	PYTHONPATH=. .venv/bin/python evernote2md/runner.py full
+	PYTHONPATH=. .venv/bin/python evernote2md/runner.py full skip
 
 
 publish_ga_docs:
