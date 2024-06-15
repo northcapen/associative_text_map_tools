@@ -31,7 +31,12 @@ def convert_db_to_pickle(context_dir, db, q):
         pickle.dump(notes, f)
 
 def _as_sqllite(db_path):
-    cnx = sqlite3.connect(db_path)
+    try:
+        cnx = sqlite3.connect(db_path)
+    except Exception as e:
+        logger.error(db_path)
+        raise e
+
     cnx.row_factory = sqlite3.Row
     return cnx
 
@@ -67,6 +72,7 @@ def read_pickled_notes(context_dir: str, predicate: Callable) -> List[NoteTO]:
     with open(f'{context_dir}/{NOTES_PICKLE}', 'rb') as f:
         res = pickle.load(f)
 
+    logger.info(f'Load {len(res)} notes from pickle file')
     if predicate is None:
         return res
     return [n for n in res if predicate(n)]
