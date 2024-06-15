@@ -33,11 +33,13 @@ def classify_notebook(notebooks: DataFrame):
     pattern = '|'.join(pro_keywords)
     pro = notebooks['stack'] == 'Professional'
     pro2 = notebooks['name'].str.contains(pattern)
-    notebooks['it-specific'] = np.where(pro | pro2, 'true', 'false')
+    notebooks['it-specific'] = np.where(pro | pro2, 'yes', 'no')
 
     # Combine conditions
     more_external = notebooks.name.str.contains('LJ') | objective
     notebooks['externality'] = np.where(more_external, 'more', 'less')
+    journals = notebooks.name == 'Daily'
+    notebooks['journals'] = np.where(journals, 'yes', 'no')
 
 
 if __name__ == '__main__':
