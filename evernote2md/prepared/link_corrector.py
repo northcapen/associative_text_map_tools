@@ -37,7 +37,8 @@ def traverse_notes(notes: List[NoteTO], processor: NoteTransformer) -> List[Note
             statuses.append({'guid' : note.guid, 'title' : note.title, 'status' : status})
 
     logger.info(f'Finished processing notes by {type(processor)}, was {len(notes)}, out {len(out_notes)}')
-    logger.info(pd.DataFrame(statuses)['status'].isnull().mean())
+    processed_ratio = 1 - pd.DataFrame(statuses)['status'].isnull().mean()
+    logger.info(f'Processed ratio: {processed_ratio}')
     for note in out_notes:
         note.status = None
 
