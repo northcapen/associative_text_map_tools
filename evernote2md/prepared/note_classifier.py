@@ -33,11 +33,11 @@ def categorise_notebooks0(notebooks: DataFrame):
     shortTerm = (notebooks['stack'] == 'Operations') | (notebooks['stack'] == 'Simple')
     notebooks['longetivity'] = np.where(shortTerm, 'short', 'long')
 
-    ex_work_projects = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
+    ex_work_projects = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand', 'Veil', 'Alter']
     pro = notebooks['stack'] == 'Professional'
     pro_ex = notebooks['name'].str.contains('|'.join(ex_work_projects))
-    pro_rubbles = notebooks['name'].str.contains('|'.join(ex_work_projects))
-    notebooks['it-specific'] = np.where(pro | pro_ex | pro_rubbles | techs, 'yes', 'no')
+    pro_current = notebooks['stack'] == 'Rubbles'
+    notebooks['it-specific'] = np.where(pro | pro_ex | pro_current | techs, 'yes', 'no')
 
     # Combine conditions
     more_external = notebooks['name'].str.contains('LJ') | objective
@@ -45,8 +45,11 @@ def categorise_notebooks0(notebooks: DataFrame):
     journals = notebooks['name'] == 'Dailys'
     notebooks['journals'] = np.where(journals, 'yes', 'no')
 
-    private = journals | (notebooks['name'] == 'Romance')
-    confidential = pro_ex | pro_rubbles
+    private = journals | (notebooks['name'].isin([
+        'Romance', 'Medical', 'Documents', 'Psychotherapy',
+        'Security Codes', 'Sensual', 'Dreams and long terms', 'After catastrophe', 'Relations']
+    ))
+    confidential = pro_ex | pro_current
     public = objective
 
     notebooks['sensitivity'] = 'sensitive'
