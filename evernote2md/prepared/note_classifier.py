@@ -23,13 +23,15 @@ def categorise_notebooks(context_dir):
 
 
 def categorise_notebooks0(notebooks: DataFrame):
+    articles = notebooks['name'].str.contains('Articles')
+    notebooks['authorship'] = np.where(articles, 'other', 'me')
+
     techs = notebooks['stack'] == 'Techs'
-    objective = (techs) | (notebooks['name'].str.contains('Ztk'))
+    objective = (techs) | (notebooks['name'].str.contains('Ztk')) | articles
     notebooks['objective'] = np.where(objective, 'objective', 'subjective')
 
     shortTerm = (notebooks['stack'] == 'Operations') | (notebooks['stack'] == 'Simple')
     notebooks['longetivity'] = np.where(shortTerm, 'short', 'long')
-    notebooks['authorship'] = np.where(notebooks['name'].str.contains('Articles'), 'other', 'me')
 
     ex_work_projects = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
     pro = notebooks['stack'] == 'Professional'
@@ -47,10 +49,10 @@ def categorise_notebooks0(notebooks: DataFrame):
     confidential = pro_ex | pro_rubbles
     public = objective
 
-    notebooks['sensitivity'] = np.where(private, 'private', np.where(confidential, 'confidential',
-                                                                     np.where(public, 'public',
-                                                                              'sensitive')))
-
+    notebooks['sensitivity'] = 'sensitive'
+    notebooks.loc[public, 'sensitivity'] = 'public'
+    notebooks.loc[confidential, 'sensitivity'] = 'confidential'
+    notebooks.loc[private, 'sensitivity'] = 'private'
 
 if __name__ == '__main__':
     notebook_classifier('data/full')
