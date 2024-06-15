@@ -26,23 +26,18 @@ def classify_notebook(nb_df: DataFrame):
     nb_df['objective'] = np.where(objective, 'objective', 'subjective')
 
     shortTerm = (nb_df.stack == 'Operations') | (nb_df.stack == 'Simple')
-    nb_df['shortTerm'] = np.where(shortTerm, 'short', 'long')
-
-    articles = nb_df.name.str.contains('Articles')
-    nb_df['articles'] = np.where(articles, 'other', 'me')
+    nb_df['longetivity'] = np.where(shortTerm, 'short', 'long')
+    nb_df['authorship'] = np.where(nb_df.name.str.contains('Articles'), 'other', 'me')
 
     pro_keywords = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
     pattern = '|'.join(pro_keywords)
-    # Check if 'stack' is 'Professional'
     pro = nb_df['stack'] == 'Professional'
-
-    # Check if any keyword is in 'name'
     pro2 = nb_df['name'].str.contains(pattern)
     nb_df['it-specific'] = np.where(pro | pro2, 'true', 'false')
 
     # Combine conditions
     more_external = nb_df.name.str.contains('LJ') | objective
-    nb_df['more_external'] = np.where(more_external, 'more-external', 'less-external')
+    nb_df['externality'] = np.where(more_external, 'more', 'less')
 
 
 if __name__ == '__main__':
