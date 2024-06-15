@@ -21,23 +21,23 @@ def notebook_classifier(context_dir):
     notebooks_df.to_csv('notebooks2.csv')
 
 
-def classify_notebook(nb_df: DataFrame):
-    objective = (nb_df.stack == 'Techs') | (nb_df.name.str.contains('Ztk'))
-    nb_df['objective'] = np.where(objective, 'objective', 'subjective')
+def classify_notebook(notebooks: DataFrame):
+    objective = (notebooks.stack == 'Techs') | (notebooks.name.str.contains('Ztk'))
+    notebooks['objective'] = np.where(objective, 'objective', 'subjective')
 
-    shortTerm = (nb_df.stack == 'Operations') | (nb_df.stack == 'Simple')
-    nb_df['longetivity'] = np.where(shortTerm, 'short', 'long')
-    nb_df['authorship'] = np.where(nb_df.name.str.contains('Articles'), 'other', 'me')
+    shortTerm = (notebooks.stack == 'Operations') | (notebooks.stack == 'Simple')
+    notebooks['longetivity'] = np.where(shortTerm, 'short', 'long')
+    notebooks['authorship'] = np.where(notebooks.name.str.contains('Articles'), 'other', 'me')
 
     pro_keywords = ['Segmento', 'Panda', 'Rainbow', 'Openway', 'HolyJS', 'Demand']
     pattern = '|'.join(pro_keywords)
-    pro = nb_df['stack'] == 'Professional'
-    pro2 = nb_df['name'].str.contains(pattern)
-    nb_df['it-specific'] = np.where(pro | pro2, 'true', 'false')
+    pro = notebooks['stack'] == 'Professional'
+    pro2 = notebooks['name'].str.contains(pattern)
+    notebooks['it-specific'] = np.where(pro | pro2, 'true', 'false')
 
     # Combine conditions
-    more_external = nb_df.name.str.contains('LJ') | objective
-    nb_df['externality'] = np.where(more_external, 'more', 'less')
+    more_external = notebooks.name.str.contains('LJ') | objective
+    notebooks['externality'] = np.where(more_external, 'more', 'less')
 
 
 if __name__ == '__main__':
