@@ -11,8 +11,6 @@ from evernote2md.notes_service import NoteTO
 from evernote2md.prepared.link_corrector import traverse_notes
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
 
 @task(persist_result=False)
 def clean_articles(notes) -> List[NoteTO]:
