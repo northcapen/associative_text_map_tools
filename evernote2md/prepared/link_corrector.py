@@ -116,6 +116,9 @@ class LinkFixer(NoteTransformer):
         return note
 
     def parse_content(self, note) -> (bool, Optional[ET.Element]):
+        if note.content is None or note.content.startswith('Cleared note,'):
+            return False, None
+
         try:
             root = ET.fromstring(note.content.replace('&nbsp;', ' '))
 
