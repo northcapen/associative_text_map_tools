@@ -102,7 +102,7 @@ def on_ci(context_dir):
 
 @flow
 def evernote_to_obsidian_flow(context_dir,):
-    notes = read_pickled_notes(context_dir, predicate=specific_notebook('Demand Ztk'))
+    notes = read_pickled_notes(context_dir, predicate=None)
 
     notes_cleaned = clean_articles(notes)
     write_notes_dataframe(context_dir, notes=notes_cleaned)
