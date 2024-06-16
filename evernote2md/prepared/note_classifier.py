@@ -46,14 +46,20 @@ def categorise_notebooks0(notebooks: DataFrame):
     notebooks['journals'] = np.where(journals, 'yes', 'no')
 
     private = journals | (notebooks['name'].isin([
-        'Romance', 'Medical', 'Documents', 'Psychotherapy',
-        'Security Codes', 'Sensual', 'Dreams and long terms', 'After catastrophe', 'Relations']
+        'Self', 'Romance', 'Medical', 'Documents', 'Psychotherapy',
+        'Security Codes', 'Sensual', 'Dreams and long terms', 'After catastrophe',
+        'Relations', 'Personal Finance']
     ))
     confidential = pro_ex | pro_current
     public = objective
+    concepts = notebooks['name'].isin(['Concepts', 'Concept placeholders'])
+    lm = notebooks['stack'] == 'LM Stack'
+    personal_projects = notebooks['stack'] == 'Personal Projects'
+    protected = concepts | lm | pro | personal_projects
 
     notebooks['sensitivity'] = 'sensitive'
     notebooks.loc[public, 'sensitivity'] = 'public'
+    notebooks.loc[protected, 'sensitivity'] = 'protected'
     notebooks.loc[confidential, 'sensitivity'] = 'confidential'
     notebooks.loc[private, 'sensitivity'] = 'private'
 
