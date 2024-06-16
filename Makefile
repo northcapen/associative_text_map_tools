@@ -10,6 +10,9 @@ main_flow_small:
 main_flow_full:
 	PYTHONPATH=. .venv/bin/python evernote2md/runner.py full skip
 
+main_flow_full_refresh:
+	PYTHONPATH=. .venv/bin/python evernote2md/runner.py full db_to_pickle
+
 
 publish_ga_docs:
 	mkdir -p ~/IdeaProjects/GADocs/demand_wiki/
