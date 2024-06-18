@@ -5,13 +5,13 @@ sync:
 	cp ~/Documents/Life\ mapping/en_backup.db data/full/
 
 main_flow_small:
-	PYTHONPATH=. .venv/bin/python evernote2md/runner.py small db_to_pickle
+	source .env.local && PYTHONPATH=. .venv/bin/python evernote2md/runner.py small db_to_pickle
 
 main_flow_full:
-	PYTHONPATH=. .venv/bin/python evernote2md/runner.py full skip
+	source .env.local && PYTHONPATH=. .venv/bin/python evernote2md/runner.py full skip
 
 main_flow_full_refresh:
-	PYTHONPATH=. .venv/bin/python evernote2md/runner.py full db_to_pickle
+	source .env.local && PYTHONPATH=. .venv/bin/python evernote2md/runner.py full db_to_pickle
 
 
 publish_ga_docs:
