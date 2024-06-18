@@ -7,7 +7,7 @@ from typing import List
 import pandas as pd
 
 from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, \
-    read_pickled_notes, read_notes_dataframe, write_links_dataframe
+    read_pickled_notes, read_notes_dataframe, write_links_dataframe, convert_notebooks_db_to_csv
 from evernote_backup.note_exporter import NoteExporter
 
 from prefect import flow, task, serve
@@ -130,7 +130,8 @@ def evernote_to_obsidian_flow(context_dir,):
 
 @flow
 def db_to_pickle_flow(context_dir):
-    convert_db_to_pickle(context_dir, db=IN_DB, q=ALL_NOTES)
+    convert_db_to_pickle(context_dir=context_dir, db=IN_DB, q=ALL_NOTES)
+    convert_notebooks_db_to_csv(db=IN_DB, context_dir=context_dir)
 
 
 if __name__ == '__main__':

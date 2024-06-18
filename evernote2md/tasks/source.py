@@ -91,9 +91,13 @@ def read_notes_dataframe(context_dir: str, format=DEFAULT_FORMAT) -> pd.DataFram
 def read_links_dataframe(context_dir: str):
     return pd.read_csv(f'{context_dir}/{LINKS_CSV}')
 
-def convert_notebooks_db_to_dataframe(cnx: Connection):
+
+@task
+def convert_notebooks_db_to_csv(db: str, context_dir: str):
+    cnx = _as_sqllite(context_dir + '/' + db)
+
     def to_row(notebook):
         return {'guid': notebook.guid, 'name': notebook.name, 'stack': notebook.stack}
 
     df = pd.DataFrame([to_row(nb) for nb in NoteBookStorage(cnx).iter_notebooks()])
-    return df
+    df.to_csv(context_dir + '/notebooks.csv', index=False)
