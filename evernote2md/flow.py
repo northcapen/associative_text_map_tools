@@ -6,6 +6,7 @@ from typing import List
 
 import pandas as pd
 
+from evernote2md.prepared.note_classifier import categorise_notebooks
 from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, \
     read_pickled_notes, read_notes_dataframe, write_links_dataframe, convert_notebooks_db_to_csv
 from evernote_backup.note_exporter import NoteExporter
@@ -18,7 +19,6 @@ from evernote2md.tasks.transforms import clean_articles, fix_links, enrich_data
 from evernote2md.notes_service import mostly_articles_notebooks, NoteTO
 
 ENEX_FOLDER = 'enex2'
-
 IN_DB = 'en_backup.db'
 
 ALL_EXCEPT_ARTICLES_FILTER = lambda nb: nb.name not in mostly_articles_notebooks
@@ -54,20 +54,20 @@ def export_enex2(notes: List[NoteTO], context_dir: str, target_dir: str, single_
 
 
 @task
-def read_stacks(context_dir, p=lambda x: True):
+def read_stacks(context_dir, source_folder, p=lambda x: True):
     original_dir = os.getcwd()  # Save the original working directory
 
     os.chdir(context_dir)
     x = [
-        stack for stack in os.listdir(ENEX_FOLDER)
-        if os.path.isdir(os.path.join(ENEX_FOLDER, stack)) and p(stack)
+        stack for stack in os.listdir(source_folder)
+        if os.path.isdir(os.path.join(source_folder, stack)) and p(stack)
     ]
     os.chdir(original_dir)  # Change back to the original working directory
     return x
 
 
 @task
-def yarle(context_dir, source, target, root_dir='md', stream_output=False):
+def yarle(context_dir, root_source, source, target, root_target='md', stream_output=False):
     if on_ci(context_dir):
         return
 
@@ -77,7 +77,7 @@ def yarle(context_dir, source, target, root_dir='md', stream_output=False):
     with open('evernote2md/yarle/config.json', 'r') as file:
         data = json.load(file)
 
-    folder_source = ENEX_FOLDER + '/' + source
+    folder_source = root_source + '/' + source
     logger.info(f"Processing {len(os.listdir(context_dir + '/' + folder_source))} notes")
 
     data['enexSources'] = [folder_source]
@@ -96,9 +96,9 @@ def yarle(context_dir, source, target, root_dir='md', stream_output=False):
         commands=[
             # replace ![[ to [[
             "find md_temp -type f -name '*.md' -exec sed -i '' 's/!\[\[/\[\[/g' {} +",
-            f'rm -rf "{root_dir}/{target}"',
-            f'mkdir -p "{root_dir}/{target}"',
-            f'mv md_temp/notes/* "{root_dir}/{target}"'
+            f'rm -rf "{root_target}/{target}"',
+            f'mkdir -p "{root_target}/{target}"',
+            f'mv md_temp/notes/* "{root_target}/{target}"'
         ],
         working_dir=context_dir
     ).run()
@@ -121,11 +121,15 @@ def evernote_to_obsidian_flow(context_dir,):
 
     notes_classified = enrich_data(notes_w_fixed_links)
 
-    enex = 'enex2'
-    export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=enex)
+    export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=ENEX_FOLDER)
+    categorise_notebooks(context_dir)
 
-    for stack in read_stacks(context_dir):
-         yarle(context_dir, source=stack, target=stack)
+    for stack in read_stacks(context_dir, source_folder=ENEX_FOLDER):
+         yarle(
+             context_dir,
+             root_source=ENEX_FOLDER,
+             root_target='md', source=stack, target=stack
+         )
 
 
 @flow
