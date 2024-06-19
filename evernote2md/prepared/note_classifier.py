@@ -24,6 +24,7 @@ def categorise_notebooks(context_dir):
     else:
         secret_notebooks = []
 
+    print(secret_notebooks)
     notebooks_df = pd.read_csv(context_dir + '/notebooks.csv')
     categorise_notebooks0(notebooks_df, secret_notebooks)
     notebooks_df.to_csv(f'{context_dir}/notebooks2.csv', index=False)
@@ -54,7 +55,7 @@ def categorise_notebooks0(notebooks: DataFrame, secret_notebooks: List[str] = No
 
     private = journals | (notebooks['name'].isin([
         'Self', 'Romance', 'Medical', 'Documents', 'Psychotherapy',
-        'Security Codes', 'Sensual', 'Dreams and long terms', 'After catastrophe',
+        'Security Codes', 'Sensual', 'Dreams and long terms',
         'Relations', 'Personal Finance']
     ))
     confidential = pro_ex | pro_current
