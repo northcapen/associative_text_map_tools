@@ -81,40 +81,44 @@ class LinkFixer(NoteTransformer):
             if not is_evernote_link(a):
                 continue
 
-            old_name = a.text
-            guid_from_link = parse_a(a)
-            if guid_from_link in self.note_guid_to_titles_dict:
-                linked_note = self.note_guid_to_titles_dict[guid_from_link]
-                a.text = linked_note.title
-                a.attrib['href'] = a.text
-                a.attrib['type'] = 'file'
-                for child in list(a): 
-                    a.remove(child)
-                status = 'success'
-            elif self.notes_trash and guid_from_link in self.notes_trash:
-                logger.error(f'Processing note {note.title}, link {a.text} found in trash')
-                status = 'trash'
-                linked_note = None
-            else:
-                logger.error(f'Processing note {note.title}, link {a.text} not found')
-                status = 'fail'
-                linked_note = None
-
-            x = {
-                'from_title' : note.title,
-                'from_guid' : note.guid,
-                'to_guid' : linked_note.guid if linked_note else None,
-                'to_old' : old_name,
-                'to_new' : linked_note.title if linked_note else None,
-                'status' : status,
-                'ts' : datetime.now()
-            }
-            self.buffer.append(x)
+            self.buffer.append(self.transform_link(note, a))
 
         result = str(ET.tostring(root, xml_declaration=False, encoding='unicode'))
         note.note.content = result
-        note.status = 'processed' if isinstance(status, str) else None
+        note.status = 'processed' if self.buffer else None
         return note
+
+    def transform_link(self, note, a):
+        old_name = a.text
+        guid_from_link = parse_a(a)
+
+        if guid_from_link in self.note_guid_to_titles_dict:
+            linked_note = self.note_guid_to_titles_dict[guid_from_link]
+            a.text = linked_note.title
+            a.attrib['href'] = a.text
+            a.attrib['type'] = 'file'
+            for child in list(a):
+                a.remove(child)
+            status = 'success'
+
+        elif self.notes_trash and guid_from_link in self.notes_trash:
+            logger.error(f'Processing note {note.title}, link {a.text} found in trash')
+            status = 'trash'
+            linked_note = None
+        else:
+            logger.error(f'Processing note {note.title}, link {a.text} not found')
+            status = 'fail'
+            linked_note = None
+
+        return {
+            'from_title': note.title,
+            'from_guid': note.guid,
+            'to_guid': linked_note.guid if linked_note else None,
+            'to_old': old_name,
+            'to_new': linked_note.title if linked_note else None,
+            'status': status,
+            'ts': datetime.now()
+        }
 
     def parse_content(self, note) -> (bool, Optional[ET.Element]):
         if note.content is None or note.content.startswith('Cleared note,'):
