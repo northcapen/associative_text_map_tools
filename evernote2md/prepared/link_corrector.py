@@ -58,10 +58,8 @@ class ArticleCleaner(NoteTransformer):
 
 
 
-class LinkFixer(NoteTransformer):
-    def __init__(self, note_guid_to_titles_dict: Dict[Any, Note], notes_trash: Dict[Any, Note]):
-        self.note_guid_to_titles_dict = note_guid_to_titles_dict
-        self.notes_trash = notes_trash
+class NoteLinkTransformer(NoteTransformer):
+    def __init__(self):
         self.buffer = []
 
     def transform(self, note: NoteTO) -> Optional[NoteTO]:
@@ -87,6 +85,35 @@ class LinkFixer(NoteTransformer):
         note.note.content = result
         note.status = 'processed' if self.buffer else None
         return note
+
+    def transform_link(self, note, a):
+        return None
+
+    def parse_content(self, note) -> (bool, Optional[ET.Element]):
+        if note.content is None or note.content.startswith('Cleared note,'):
+            return False, None
+
+        try:
+            root = ET.fromstring(note.content.replace('&nbsp;', ' '))
+
+            # if root.text and root.text.strip():
+            #     logger.info(f'Found text in root element {root.text}, parsing it as XML')
+            #     root = ET.fromstring(root.text.strip())
+
+        except ET.ParseError as e:
+            logger.error(f'Couldnt parse note {note.title}, got error {e}"')
+            #logger.error(root.text)
+            #logger.error(list(root))
+            return False, None
+
+        return True, root
+
+class LinkFixer(NoteLinkTransformer):
+
+    def __init__(self, note_guid_to_titles_dict: Dict[Any, Note], notes_trash: Dict[Any, Note]):
+        super().__init__()
+        self.note_guid_to_titles_dict = note_guid_to_titles_dict
+        self.notes_trash = notes_trash
 
     def transform_link(self, note, a):
         old_name = a.text
@@ -119,25 +146,6 @@ class LinkFixer(NoteTransformer):
             'status': status,
             'ts': datetime.now()
         }
-
-    def parse_content(self, note) -> (bool, Optional[ET.Element]):
-        if note.content is None or note.content.startswith('Cleared note,'):
-            return False, None
-
-        try:
-            root = ET.fromstring(note.content.replace('&nbsp;', ' '))
-
-            # if root.text and root.text.strip():
-            #     logger.info(f'Found text in root element {root.text}, parsing it as XML')
-            #     root = ET.fromstring(root.text.strip())
-
-        except ET.ParseError as e:
-            logger.error(f'Couldnt parse note {note.title}, got error {e}"')
-            #logger.error(root.text)
-            #logger.error(list(root))
-            return False, None
-
-        return True, root
 
 
 def is_evernote_link(a) -> bool:
