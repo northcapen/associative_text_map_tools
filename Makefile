@@ -1,8 +1,8 @@
 
 .PHONY: sync publish
 sync:
-	pushd ~/Documents/Life\ mapping && evernote-backup sync && popd
-	cp ~/Documents/Life\ mapping/en_backup.db data/full/
+	pushd ~/Documents/LM && evernote-backup sync && popd
+	cp ~/Documents/LM/en_backup.db data/full/
 
 main_flow_small:
 	source .env.local && PYTHONPATH=. .venv/bin/python evernote2md/runner.py small db_to_pickle
