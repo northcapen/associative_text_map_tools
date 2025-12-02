@@ -43,7 +43,9 @@ def export_enex2(notes: List[NoteTO], context_dir: str, target_dir: str, single_
                                  single_notes=single_notes, export_trash=False,
                                  no_export_date=True, overwrite=True)
     print(context_dir)
-    notebooks = set(note.notebook for note in notes)
+    # Use dict to store unique notebooks by guid (Notebook objects are not hashable)
+    notebooks_dict = {note.notebook.guid: note.notebook for note in notes}
+    notebooks = list(notebooks_dict.values())
     for nb in tqdm(notebooks):
         logger.info(f'Exporting notebook {nb.name}')
         current_notes = [note.note for note in notes if note.notebook.name == nb.name]
@@ -130,6 +132,7 @@ def evernote_to_obsidian_flow(context_dir,):
              root_source=ENEX_FOLDER,
              root_target='md', source=stack, target=stack
          )
+
 
 
 @flow
