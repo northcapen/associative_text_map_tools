@@ -38,4 +38,5 @@ jobs:
     - run: mkdir -p data/small_ci
     - run: cp data_persistent/notes_small.pickle data/small_ci/notes.pickle
     - run: cp data_persistent/raw_notes_small.parquet data/small_ci/raw_notes.parquet
+    - run: cp data_persistent/notebooks_small.csv data/small_ci/notebooks.csv
     - run: PYTHONPATH=. python evernote2md/runner.py small_ci
