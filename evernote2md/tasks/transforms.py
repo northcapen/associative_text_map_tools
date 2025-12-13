@@ -1,14 +1,17 @@
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 from evernote.edam.type.ttypes import Note
 from prefect import task
 
-from evernote2md.prepared.link_corrector import LinkFixer, ArticleCleaner
-from evernote2md.prepared.note_classifier import NoteClassifier
 from evernote2md.notes_service import NoteTO
-from evernote2md.prepared.link_corrector import traverse_notes
+from evernote2md.prepared.link_corrector import (
+    ArticleCleaner,
+    LinkFixer,
+    traverse_notes,
+)
+from evernote2md.prepared.note_classifier import NoteClassifier
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,8 @@ import networkx as nx
 import pandas as pd
 from prefect import flow, task
 
-from evernote2md.tasks.source import read_notes_dataframe, read_links_dataframe
+from evernote2md.tasks.source import read_links_dataframe, read_notes_dataframe
+
 
 @task
 def build_cosma(context_dir):

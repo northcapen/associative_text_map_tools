@@ -1,11 +1,9 @@
+import logging
 from dataclasses import dataclass
 
-import logging
-from evernote.edam.type.ttypes import Note, Notebook
-
-from evernote_backup.note_storage import NoteBookStorage
-
 import pandas as pd
+from evernote.edam.type.ttypes import Note, Notebook
+from evernote_backup.note_storage import NoteBookStorage
 
 #todo rename to domain.py
 
@@ -35,7 +33,7 @@ class NoteTO:
     @property
     def content(self):
         return self.note.content
-    
+
     def as_dict(self, include_content):
         return {
             'id' : self.note.guid,

@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from evernote2md.flow import evernote_to_obsidian_flow, db_to_pickle_flow
+from evernote2md.flow import db_to_pickle_flow, evernote_to_obsidian_flow
 
 logging.getLogger('evernote_backup').setLevel(logging.INFO)
 

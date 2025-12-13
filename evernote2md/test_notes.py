@@ -1,12 +1,10 @@
 import logging
 import uuid
-
-from evernote2md.prepared.link_corrector import find_linked_note, LinkFixer
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
-import xml.etree.ElementTree as ET
-
 from evernote2md.notes_service import NoteTO
+from evernote2md.prepared.link_corrector import LinkFixer, find_linked_note
 
 # Create a logger
 logger = logging.getLogger()

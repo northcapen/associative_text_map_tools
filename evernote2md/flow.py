@@ -4,19 +4,22 @@ import os
 from pathlib import Path
 from typing import List
 
-import pandas as pd
-
-from evernote2md.prepared.note_classifier import categorise_notebooks
-from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, \
-    read_pickled_notes, read_notes_dataframe, write_links_dataframe, convert_notebooks_db_to_csv
 from evernote_backup.note_exporter import NoteExporter
-
-from prefect import flow, task, serve
+from prefect import flow, serve, task
 from prefect_shell import ShellOperation
 from tqdm import tqdm
 
-from evernote2md.tasks.transforms import clean_articles, fix_links, enrich_data
-from evernote2md.notes_service import mostly_articles_notebooks, NoteTO
+from evernote2md.notes_service import NoteTO, mostly_articles_notebooks
+from evernote2md.prepared.note_classifier import categorise_notebooks
+from evernote2md.tasks.source import (
+    convert_db_to_pickle,
+    convert_notebooks_db_to_csv,
+    read_notes_dataframe,
+    read_pickled_notes,
+    write_links_dataframe,
+    write_notes_dataframe,
+)
+from evernote2md.tasks.transforms import clean_articles, enrich_data, fix_links
 
 ENEX_FOLDER = 'enex2'
 IN_DB = 'en_backup.db'
@@ -88,14 +91,14 @@ def yarle(context_dir, root_source, source, target, root_target='md', stream_out
         # Step 6: Dump the updated JSON data back into the file
         json.dump(data, file, indent=4)
 
-    command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
+    command = "npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
     logger.debug(command)
     ShellOperation(commands=[command], working_dir=context_dir, stream_output=stream_output).run()
     #source_enex = source[:-len('.enex')]
     ShellOperation(
         commands=[
             # replace ![[ to [[
-            "find md_temp -type f -name '*.md' -exec sed -i '' 's/!\[\[/\[\[/g' {} +",
+            r"find md_temp -type f -name '*.md' -exec sed -i '' 's/!\[\[/\[\[/g' {} +",
             f'rm -rf "{root_target}/{target}"',
             f'mkdir -p "{root_target}/{target}"',
             f'mv md_temp/notes/* "{root_target}/{target}"'

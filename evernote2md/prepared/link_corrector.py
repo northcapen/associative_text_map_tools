@@ -1,9 +1,10 @@
 import logging
 import traceback
+
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from typing import Optional, Dict, List, Any
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from evernote.edam.type.ttypes import Note

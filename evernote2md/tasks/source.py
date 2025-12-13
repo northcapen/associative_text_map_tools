@@ -2,14 +2,14 @@ import datetime
 import pickle
 import sqlite3
 from sqlite3 import Connection
-from typing import List, Callable, Iterable, Dict
+from typing import Callable, Dict, Iterable, List
 
 import pandas as pd
+from evernote_backup.note_storage import NoteBookStorage, NoteStorage
 from prefect import task
 
 from evernote2md.notes_service import NoteTO
 from evernote2md.tasks.transforms import logger
-from evernote_backup.note_storage import NoteBookStorage, NoteStorage
 
 DEFAULT_FORMAT = 'csv'
 

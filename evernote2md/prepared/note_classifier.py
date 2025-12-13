@@ -1,13 +1,13 @@
 import os
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from prefect import task
 
-from evernote2md.prepared.link_corrector import NoteTransformer
 from evernote2md.notes_service import NoteTO
+from evernote2md.prepared.link_corrector import NoteTransformer
 
 
 class NoteClassifier(NoteTransformer):
