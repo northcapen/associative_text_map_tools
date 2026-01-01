@@ -106,23 +106,26 @@ def read_stacks(context_dir, source_folder, p=lambda x: True):
 def yarle(context_dir, root_source, source, target, root_target="md", stream_output=False):
     print(f"Processing stack {source}")
 
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    config_path = os.path.join(project_root, "evernote2md", "yarle", "config.json")
+    template_path = os.path.join(project_root, "evernote2md", "yarle", "noteTemplate.tmpl")
+
     # Step 2: Open the config.json file in read mode
-    with open("evernote2md/yarle/config.json") as file:
+    with open(config_path) as file:
         data = json.load(file)
 
     folder_source = root_source + "/" + source
     logger.info(f"Processing {len(os.listdir(context_dir + '/' + folder_source))} notes")
 
     data["enexSources"] = [folder_source]
-    data["templateFile"] = os.path.abspath("evernote2md/yarle/noteTemplate.tmpl")
+    data["templateFile"] = os.path.abspath(template_path)
 
     # Step 5: Open the config.json file in write mode
     with open(f"{context_dir}/config.json", "w") as file:
         # Step 6: Dump the updated JSON data back into the file
         json.dump(data, file, indent=4)
 
-    # Get absolute path to yarle from project root's node_modules
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     yarle_script = os.path.join(project_root, "node_modules", "yarle-evernote-to-md", "dist", "dropTheRope.js")
 
     # Call node directly (shebang with args doesn't work on Linux)
