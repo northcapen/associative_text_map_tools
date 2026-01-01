@@ -13,6 +13,8 @@ main_flow_full:
 main_flow_full_refresh:
 	source .env.local && PYTHONPATH=. .venv/bin/python evernote2md/runner.py full db_to_pickle
 
+prefect_ui:
+	source .env.local && PYTHONPATH=. prefect server start
 
 publish_ga_docs:
 	mkdir -p ~/IdeaProjects/GADocs/demand_wiki/

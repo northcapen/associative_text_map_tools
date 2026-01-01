@@ -89,6 +89,8 @@ def export_enex2(notes: list[NoteTO], context_dir: str, target_dir: str, single_
         notebook_path = safe_paths.get_file(*pathes, f"{nb.name}.enex")
         _write_export_file(notebook_path, nb.name, current_notes, note_formatter)
 
+    return target_dir
+
 
 @task
 def read_stacks(context_dir, source_folder, p=lambda x: True):
@@ -153,24 +155,24 @@ def yarle(context_dir, root_source, source, target, root_target="md", stream_out
 
 
 @flow
-def evernote_to_obsidian_flow(
-    context_dir,
-):
+def evernote_to_obsidian_flow(context_dir):
     notes = read_pickled_notes(context_dir, predicate=None)
 
     notes_cleaned = clean_articles(notes)
     write_notes_dataframe(context_dir, notes=notes_cleaned)
 
-    raw_notes_all = read_notes_dataframe(context_dir)
-    notes_w_fixed_links, links = fix_links(raw_notes_all, notes_cleaned)
+    raw_notes_pd = read_notes_dataframe(context_dir)
+    notes_w_fixed_links, links = fix_links(raw_notes_pd, notes_cleaned)
     write_links_dataframe(context_dir, links=links)
 
-    notes_classified = enrich_data(notes_w_fixed_links)
+    notes_enriched = enrich_data(notes_w_fixed_links)
 
-    export_enex2(notes=notes_classified, context_dir=context_dir, target_dir=ENEX_FOLDER)
+    enex_folder = export_enex2(notes=notes_enriched, context_dir=context_dir, target_dir=ENEX_FOLDER)
     categorise_notebooks(context_dir)
 
-    for stack in read_stacks(context_dir, source_folder=ENEX_FOLDER):
+    stacks = read_stacks(context_dir, source_folder=enex_folder)
+
+    for stack in stacks:
         yarle(context_dir, root_source=ENEX_FOLDER, root_target="md", source=stack, target=stack)
 
 
