@@ -15,7 +15,9 @@ class NoteClassifier(NoteTransformer):
 
 
 @task
-def categorise_notebooks(context_dir):
+def categorise_notebooks(context_dir: str):
+    from evernote2md.tasks.source import NOTEBOOK_CSV
+
     secret_notebooks = os.environ.get("SECRET_NOTEBOOKS", None)
     if secret_notebooks:
         secret_notebooks = secret_notebooks.split(",")
@@ -23,7 +25,7 @@ def categorise_notebooks(context_dir):
         secret_notebooks = []
 
     print(secret_notebooks)
-    notebooks_df = pd.read_csv(context_dir + "/notebooks.csv")
+    notebooks_df = pd.read_csv(f"{context_dir}/{NOTEBOOK_CSV}")
     categorise_notebooks0(notebooks_df, secret_notebooks)
     notebooks_df.to_csv(f"{context_dir}/notebooks2.csv", index=False)
 
