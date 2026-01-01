@@ -17,6 +17,7 @@ NOTES_PARQUET = "notes.parquet"
 NOTES_CSV = "notes.csv"
 NOTES_PICKLE = "notes.pickle"
 LINKS_CSV = "links.csv"
+NOTEBOOK_CSV = "notebooks.csv"
 
 
 @task
@@ -103,4 +104,4 @@ def convert_notebooks_db_to_csv(db: str, context_dir: str):
         return {"guid": notebook.guid, "name": notebook.name, "stack": notebook.stack}
 
     df = pd.DataFrame([to_row(nb) for nb in NoteBookStorage(cnx).iter_notebooks()])
-    df.to_csv(context_dir + "/notebooks.csv", index=False)
+    df.to_csv(f"{context_dir}/{NOTEBOOK_CSV}", index=False)
