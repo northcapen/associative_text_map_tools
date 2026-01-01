@@ -40,3 +40,48 @@ jobs:
     - run: cp data_persistent/raw_notes_small.parquet data/small_ci/raw_notes.parquet
     - run: cp data_persistent/notebooks_small.csv data/small_ci/notebooks.csv
     - run: PYTHONPATH=. python evernote2md/runner.py small_ci
+    - name: Verify integration test output
+      run: |
+        PYTHONPATH=. python -c "
+        import os
+        import pandas as pd
+        from pathlib import Path
+
+        context_dir = 'data/small_ci'
+
+        # Verify notes.csv was created
+        notes_csv = f'{context_dir}/notes.csv'
+        assert os.path.exists(notes_csv), f'Notes CSV not found: {notes_csv}'
+        assert os.path.getsize(notes_csv) > 0, f'Notes CSV is empty: {notes_csv}'
+        notes_df = pd.read_csv(notes_csv)
+        assert len(notes_df) == 4, f'Expected 4 notes, got {len(notes_df)}'
+        assert 'id' in notes_df.columns, 'Notes CSV missing id column'
+        assert 'title' in notes_df.columns, 'Notes CSV missing title column'
+        print(f'✓ Notes CSV: {len(notes_df)} notes (expected 4)')
+
+        # Verify links.csv was created
+        links_csv = f'{context_dir}/links.csv'
+        assert os.path.exists(links_csv), f'Links CSV not found: {links_csv}'
+        assert os.path.getsize(links_csv) > 0, f'Links CSV is empty: {links_csv}'
+        links_df = pd.read_csv(links_csv)
+        assert len(links_df) == 2, f'Expected 2 links, got {len(links_df)}'
+        assert 'from_guid' in links_df.columns, 'Links CSV missing from_guid column'
+        assert 'to_guid' in links_df.columns, 'Links CSV missing to_guid column'
+        assert 'status' in links_df.columns, 'Links CSV missing status column'
+        # Verify all links have success status
+        success_links = links_df[links_df['status'] == 'success']
+        assert len(success_links) == 2, f'Expected 2 successful links, got {len(success_links)}'
+        print(f'✓ Links CSV: {len(links_df)} links (expected 2), all successful')
+
+        # Verify enex2 directory was created
+        enex2_dir = f'{context_dir}/enex2'
+        assert os.path.exists(enex2_dir), f'ENEX2 directory not found: {enex2_dir}'
+        assert os.path.isdir(enex2_dir), f'ENEX2 is not a directory: {enex2_dir}'
+
+        # Verify at least one .enex file was created
+        enex_files = list(Path(enex2_dir).rglob('*.enex'))
+        assert len(enex_files) > 0, f'No .enex files found in {enex2_dir}'
+        print(f'✓ ENEX files: {len(enex_files)} files generated')
+
+        print('✅ Integration test assertions passed')
+        "
