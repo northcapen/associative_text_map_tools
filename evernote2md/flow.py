@@ -156,8 +156,9 @@ def yarle(context_dir, root_source, source, target, root_target="md", stream_out
 
 @flow
 def evernote_to_obsidian_flow(context_dir):
-    notes = read_pickled_notes(context_dir, predicate=None)
+    categorise_notebooks(context_dir)
 
+    notes = read_pickled_notes(context_dir, predicate=None)
     notes_cleaned = clean_articles(notes)
     write_notes_dataframe(context_dir, notes=notes_cleaned)
 
@@ -166,9 +167,7 @@ def evernote_to_obsidian_flow(context_dir):
     write_links_dataframe(context_dir, links=links)
 
     notes_enriched = enrich_data(notes_w_fixed_links)
-
     enex_folder_future = export_enex2.submit(notes=notes_enriched, context_dir=context_dir, target_dir=ENEX_FOLDER)
-    categorise_notebooks(context_dir)
 
     stacks_future = read_stacks.submit(context_dir, source_folder=ENEX_FOLDER, wait_for=[enex_folder_future])
     stacks = stacks_future.result()
