@@ -7,7 +7,6 @@ from prefect import task
 
 from evernote2md.notes_service import NoteTO
 from evernote2md.prepared.link_corrector import NoteTransformer
-from evernote2md.tasks.source import NOTEBOOK_CSV
 
 
 class NoteClassifier(NoteTransformer):
@@ -17,6 +16,8 @@ class NoteClassifier(NoteTransformer):
 
 @task
 def categorise_notebooks(context_dir: str):
+    from evernote2md.tasks.source import NOTEBOOK_CSV
+
     secret_notebooks = os.environ.get("SECRET_NOTEBOOKS", None)
     if secret_notebooks:
         secret_notebooks = secret_notebooks.split(",")

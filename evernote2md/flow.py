@@ -167,10 +167,11 @@ def evernote_to_obsidian_flow(context_dir):
 
     notes_enriched = enrich_data(notes_w_fixed_links)
 
-    enex_folder = export_enex2(notes=notes_enriched, context_dir=context_dir, target_dir=ENEX_FOLDER)
+    enex_folder_future = export_enex2.submit(notes=notes_enriched, context_dir=context_dir, target_dir=ENEX_FOLDER)
     categorise_notebooks(context_dir)
 
-    stacks = read_stacks(context_dir, source_folder=enex_folder)
+    stacks_future = read_stacks.submit(context_dir, source_folder=ENEX_FOLDER, wait_for=[enex_folder_future])
+    stacks = stacks_future.result()
 
     for stack in stacks:
         yarle(context_dir, root_source=ENEX_FOLDER, root_target="md", source=stack, target=stack)
