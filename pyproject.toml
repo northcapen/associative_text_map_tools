@@ -22,4 +22,29 @@ dvc = "3.50.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "8.1.1"
-flake8 = "6.1.0"
+ruff = "^0.8.0"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["evernote2md", "graph"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

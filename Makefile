@@ -17,3 +17,15 @@ main_flow_full_refresh:
 publish_ga_docs:
 	mkdir -p ~/IdeaProjects/GADocs/demand_wiki/
 	cp -R data/demand_ztk/md ~/IdeaProjects/GADocs/demand_wiki/
+
+lint:
+	source .venv/bin/activate && ruff check .
+
+lint-fix:
+	source .venv/bin/activate && ruff check --fix .
+
+format:
+	source .venv/bin/activate && ruff format .
+
+format-check:
+	source .venv/bin/activate && ruff format --check .
