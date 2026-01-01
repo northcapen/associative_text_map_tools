@@ -8,7 +8,9 @@ from prefect import task
 from evernote2md.prepared.link_corrector import LinkFixer, ArticleCleaner
 from evernote2md.prepared.note_classifier import NoteClassifier
 from evernote2md.notes_service import NoteTO
-from evernote2md.prepared.link_corrector import traverse_notes
+from evernote2md.prepared.link_corrector import ArticleCleaner, LinkFixer, traverse_notes
+from evernote2md.prepared.markdown_postprocessor import process_markdown_directory
+from evernote2md.prepared.note_classifier import NoteClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -43,3 +45,29 @@ def _note_metadata(notes_df: pd.DataFrame, active=True) -> Dict[Any, Note]:
 def enrich_data(links_fixed: List[NoteTO]) -> List[NoteTO]:
     notes_enriched = traverse_notes(notes=links_fixed, processor=NoteClassifier())
     return notes_enriched
+
+
+@task
+def postprocess_multilanguage_titles(context_dir: str, md_folder: str = "md", output_dir: str | None = None) -> dict:
+    """
+    Post-process markdown files to handle multilanguage titles.
+
+    - Renames files: 'Presense _ Присутствие.md' → 'Presense.md'
+    - Adds aliases: aliases: ["Присутствие"]
+    - Updates all wiki-links across the vault
+
+    Args:
+        context_dir: Base directory for data
+        md_folder: Name of markdown folder (default: "md")
+        output_dir: If specified, export processed files to this directory instead of modifying in place
+    """
+    md_root = f"{context_dir}/{md_folder}"
+    logger.info(f"Post-processing multilanguage titles in {md_root}")
+
+    if output_dir:
+        logger.info(f"Output directory: {output_dir}")
+
+    result = process_markdown_directory(md_root, output_dir=output_dir)
+
+    logger.info(f"Post-processing complete: {result}")
+    return result

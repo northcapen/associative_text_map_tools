@@ -18,8 +18,25 @@ from prefect import flow, task, serve
 from prefect_shell import ShellOperation
 from tqdm import tqdm
 
-from evernote2md.tasks.transforms import clean_articles, fix_links, enrich_data
-from evernote2md.notes_service import mostly_articles_notebooks, NoteTO
+from evernote2md.notes_service import NoteTO, mostly_articles_notebooks
+from evernote2md.prepared.note_classifier import categorise_notebooks
+from evernote2md.tasks.source import (
+    convert_db_to_pickle,
+    convert_notebooks_db_to_csv,
+    read_notes_dataframe,
+    read_pickled_notes,
+    write_links_dataframe,
+    write_notes_dataframe,
+)
+from evernote2md.tasks.transforms import clean_articles, enrich_data, fix_links, postprocess_multilanguage_titles
+
+ENEX_FOLDER = "enex2"
+IN_DB = "en_backup.db"
+
+
+def ALL_EXCEPT_ARTICLES_FILTER(nb):
+    return nb.name not in mostly_articles_notebooks
+
 
 ENEX_FOLDER = 'enex2'
 IN_DB = 'en_backup.db'
@@ -172,6 +189,11 @@ def evernote_to_obsidian_flow(context_dir,):
              root_target='md', source=stack, target=stack
          )
 
+
+    # Post-process multilanguage titles (rename files, add aliases, update links)
+    # Export to md2 directory to preserve original files
+    output_md_dir = f"{context_dir}/md2"
+    postprocess_multilanguage_titles(context_dir, output_dir=output_md_dir)
 
 
 @flow
