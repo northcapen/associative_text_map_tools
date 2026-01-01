@@ -13,14 +13,42 @@ package-mode = false
 python = "~3.11"
 pandas = "2.1.4"
 gspread = "5.12.3"
-prefect = "2.16.3"
+prefect = "^3.6.9"
 evernote-backup = "1.13.1"
 tqdm = "4.66.2"
 pyarrow = "15.0.1"
-prefect-shell = "0.2.1"
+prefect-shell = "^0.3.1"
 dvc = "3.50.0"
 python-frontmatter = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "8.1.1"
-flake8 = "6.1.0"
+ruff = "^0.8.0"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    "notes_analytics/*.ipynb",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["evernote2md", "graph"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
