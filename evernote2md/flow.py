@@ -91,9 +91,6 @@ def read_stacks(context_dir, source_folder, p=lambda x: True):
 
 @task
 def yarle(context_dir, root_source, source, target, root_target='md', stream_output=False):
-    if on_ci(context_dir):
-        return
-
     print(f'Processing stack {source}')
 
     # Step 2: Open the config.json file in read mode
@@ -125,10 +122,6 @@ def yarle(context_dir, root_source, source, target, root_target='md', stream_out
         ],
         working_dir=context_dir
     ).run()
-
-
-def on_ci(context_dir):
-    return '_ci' in context_dir
 
 
 @flow

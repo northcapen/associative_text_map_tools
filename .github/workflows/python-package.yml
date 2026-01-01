@@ -83,5 +83,16 @@ jobs:
         assert len(enex_files) > 0, f'No .enex files found in {enex2_dir}'
         print(f'✓ ENEX files: {len(enex_files)} files generated')
 
+        # Verify md directory was created
+        md_dir = f'{context_dir}/md'
+        assert os.path.exists(md_dir), f'MD directory not found: {md_dir}'
+        assert os.path.isdir(md_dir), f'MD is not a directory: {md_dir}'
+
+        # Verify at least one .md file was created
+        md_files = list(Path(md_dir).rglob('*.md'))
+        assert len(md_files) > 0, f'No .md files found in {md_dir}'
+        assert len(md_files) == 4, f'Expected 4 .md files, got {len(md_files)}'
+        print(f'✓ MD files: {len(md_files)} files generated (expected 4)')
+
         print('✅ Integration test assertions passed')
         "
