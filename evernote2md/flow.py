@@ -9,7 +9,8 @@ import pandas as pd
 from evernote2md.prepared.note_classifier import categorise_notebooks
 from evernote2md.tasks.source import write_notes_dataframe, convert_db_to_pickle, \
     read_pickled_notes, read_notes_dataframe, write_links_dataframe, convert_notebooks_db_to_csv
-from evernote_backup.note_exporter import NoteExporter
+from evernote_backup.note_exporter_util import SafePath
+from evernote_backup.note_formatter import NoteFormatter
 
 from prefect import flow, task, serve
 from prefect_shell import ShellOperation
@@ -37,20 +38,42 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
+ENEX_HEAD = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export4.dtd">
+"""
+ENEX_TAIL = "</en-export>\n"
+
+
+def _write_export_file(file_path: Path, notebook_name: str, notes, note_formatter: NoteFormatter):
+    """Write notes to an ENEX file without requiring storage for tasks."""
+    with file_path.open("w", encoding="utf-8") as f:
+        f.write(ENEX_HEAD)
+        f.write('<en-export application="Evernote" version="10.134.4">\n')
+
+        for note in notes:
+            # Pass empty list for note_tasks since we don't have storage
+            f.write(note_formatter.format_note(note, notebook_name, []))
+
+        f.write(ENEX_TAIL)
+
+
 @task
 def export_enex2(notes: List[NoteTO], context_dir: str, target_dir: str, single_notes=False):
-    note_exporter = NoteExporter(storage=None, target_dir=Path(context_dir),
-                                 single_notes=single_notes, export_trash=False,
-                                 no_export_date=True, overwrite=True)
+    safe_paths = SafePath(Path(context_dir), overwrite=True)
+    note_formatter = NoteFormatter(add_guid=False, add_metadata=False)
+
     print(context_dir)
-    notebooks = set(note.notebook for note in notes)
+    # Use dict to store unique notebooks by guid (Notebook objects are not hashable)
+    notebooks_dict = {note.notebook.guid: note.notebook for note in notes}
+    notebooks = list(notebooks_dict.values())
     for nb in tqdm(notebooks):
         logger.info(f'Exporting notebook {nb.name}')
         current_notes = [note.note for note in notes if note.notebook.name == nb.name]
         pathes = target_dir.split('/')
         if nb.stack:
             pathes.append(nb.stack)
-        note_exporter._output_notebook(pathes, nb.name, current_notes)
+        notebook_path = safe_paths.get_file(*pathes, f"{nb.name}.enex")
+        _write_export_file(notebook_path, nb.name, current_notes, note_formatter)
 
 
 @task
@@ -130,6 +153,7 @@ def evernote_to_obsidian_flow(context_dir,):
              root_source=ENEX_FOLDER,
              root_target='md', source=stack, target=stack
          )
+
 
 
 @flow
