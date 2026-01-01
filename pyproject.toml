@@ -13,11 +13,11 @@ package-mode = false
 python = "~3.11"
 pandas = "2.1.4"
 gspread = "5.12.3"
-prefect = "2.16.3"
+prefect = "^3.6.9"
 evernote-backup = "1.13.1"
 tqdm = "4.66.2"
 pyarrow = "15.0.1"
-prefect-shell = "0.2.1"
+prefect-shell = "^0.3.1"
 dvc = "3.50.0"
 
 [tool.poetry.dev-dependencies]
