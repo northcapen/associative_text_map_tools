@@ -34,7 +34,7 @@ jobs:
       run: |
         ruff format --check .
     - name: Test with pytest
-    - run: PYTHONPATH=. pytest
+      run: PYTHONPATH=. pytest
     - run: mkdir -p data/small_ci
     - run: cp data_persistent/notes_small.pickle data/small_ci/notes.pickle
     - run: cp data_persistent/raw_notes_small.parquet data/small_ci/raw_notes.parquet
