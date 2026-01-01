@@ -24,7 +24,7 @@ def categorise_notebooks(context_dir: str):
         secret_notebooks = []
 
     print(secret_notebooks)
-    notebooks_df = pd.read_csv(context_dir / NOTEBOOK_CSV)
+    notebooks_df = pd.read_csv(f"{context_dir}/{NOTEBOOK_CSV}")
     categorise_notebooks0(notebooks_df, secret_notebooks)
     notebooks_df.to_csv(f"{context_dir}/notebooks2.csv", index=False)
 

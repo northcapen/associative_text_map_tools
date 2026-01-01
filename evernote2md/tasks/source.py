@@ -103,4 +103,4 @@ def convert_notebooks_db_to_csv(db: str, context_dir: str):
         return {"guid": notebook.guid, "name": notebook.name, "stack": notebook.stack}
 
     df = pd.DataFrame([to_row(nb) for nb in NoteBookStorage(cnx).iter_notebooks()])
-    df.to_csv(context_dir / NOTEBOOK_CSV, index=False)
+    df.to_csv(f"{context_dir}/{NOTEBOOK_CSV}", index=False)
