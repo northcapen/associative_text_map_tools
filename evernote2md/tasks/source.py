@@ -19,6 +19,7 @@ NOTES_PICKLE = "notes.pickle"
 LINKS_CSV = "links.csv"
 NOTEBOOK_CSV = "notebooks.csv"
 
+
 @task
 def convert_db_to_pickle(context_dir, db, q):
     indb = _as_sqllite(context_dir + "/" + db)
