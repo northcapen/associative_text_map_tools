@@ -1,5 +1,8 @@
 data/
 .venv/
+node_modules/
+__pycache__/
+*.pyc
 graph/cosmoscope.html
 graph/application.log
 graph/history
