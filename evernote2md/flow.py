@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import List
 
@@ -108,14 +110,37 @@ def yarle(context_dir, root_source, source, target, root_target='md', stream_out
         # Step 6: Dump the updated JSON data back into the file
         json.dump(data, file, indent=4)
 
-    command = f"npx -p yarle-evernote-to-md@latest yarle yarle --configFile config.json"
-    logger.debug(command)
-    ShellOperation(commands=[command], working_dir=context_dir, stream_output=stream_output).run()
+    # Get absolute path to yarle from project root's node_modules
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    yarle_script = os.path.join(project_root, 'node_modules', 'yarle-evernote-to-md', 'dist', 'dropTheRope.js')
+
+    # Call node directly (shebang with args doesn't work on Linux)
+    command = f"node --max-old-space-size=1024 {yarle_script} --configFile config.json"
+    logger.info(f"Running: {command}")
+
+    # Use subprocess with real-time output
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        cwd=context_dir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
+
+    for line in process.stdout:
+        print(line, end='', flush=True)
+        sys.stdout.flush()
+
+    return_code = process.wait()
+    if return_code != 0:
+        raise RuntimeError(f"yarle failed with return code {return_code}")
     #source_enex = source[:-len('.enex')]
     ShellOperation(
         commands=[
-            # replace ![[ to [[
-            "find md_temp -type f -name '*.md' -exec sed -i '' 's/!\[\[/\[\[/g' {} +",
+            # replace ![[ to [[ (cross-platform: try GNU sed first, then BSD sed)
+            "find md_temp -type f -name '*.md' -exec sed -i 's/!\\[\\[/\\[\\[/g' {} + 2>/dev/null || find md_temp -type f -name '*.md' -exec sed -i '' 's/!\\[\\[/\\[\\[/g' {} +",
             f'rm -rf "{root_target}/{target}"',
             f'mkdir -p "{root_target}/{target}"',
             f'mv md_temp/notes/* "{root_target}/{target}"'

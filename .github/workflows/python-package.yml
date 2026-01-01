@@ -24,6 +24,13 @@ jobs:
       with:
         python-version: "3.11.9"
     - uses: Gr1N/setup-poetry@v8
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install node dependencies
+      run: |
+        rm -rf node_modules
+        npm install
     - run: poetry --version
     - run: poetry config virtualenvs.create false --local
     - run: poetry install
