@@ -16,7 +16,17 @@ from evernote2md.prepared.note_classifier import NoteClassifier
 
 logger = logging.getLogger(__name__)
 
-result_storage = LocalFileSystem(basepath="./prefect-results")
+# Configure result storage for incremental runs
+# Create and save block if it doesn't exist
+_result_storage_block = LocalFileSystem(basepath="./prefect-results")
+try:
+    # Try to load existing block
+    _result_storage_block.load("local-results")
+    result_storage = "local-file-system/local-results"
+except Exception:
+    # Block doesn't exist, create and save it
+    _result_storage_block.save("local-results", overwrite=True)
+    result_storage = "local-file-system/local-results"
 
 
 @task(persist_result=False)
@@ -96,16 +106,8 @@ def _postprocess_cache_key_fn(context, parameters) -> str:
     return params_hash or "no_cache"
 
 
-@task(
-    persist_result=True,
-    result_storage=result_storage,
-    cache_key_fn=_postprocess_cache_key_fn
-)
-def postprocess_multilanguage_titles(
-    context_dir: str,
-    md_folder: str = "md",
-    output_dir: str | None = None
-) -> dict:
+@task(persist_result=True, result_storage=result_storage, cache_key_fn=_postprocess_cache_key_fn)
+def postprocess_multilanguage_titles(context_dir: str, md_folder: str = "md", output_dir: str | None = None) -> dict:
     """
     Post-process markdown files to handle multilanguage titles.
 
