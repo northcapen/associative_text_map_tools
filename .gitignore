@@ -7,3 +7,4 @@ graph/cosmoscope.html
 graph/application.log
 graph/history
 /.env.local
+prefect-results/

@@ -21,7 +21,7 @@ from evernote2md.tasks.source import (
     write_links_dataframe,
     write_notes_dataframe,
 )
-from evernote2md.tasks.transforms import clean_articles, enrich_data, fix_links
+from evernote2md.tasks.transforms import clean_articles, enrich_data, fix_links, postprocess_multilanguage_titles
 
 ENEX_FOLDER = "enex2"
 IN_DB = "en_backup.db"
@@ -177,6 +177,11 @@ def evernote_to_obsidian_flow(context_dir):
 
     for stack in stacks:
         yarle(context_dir, root_source=ENEX_FOLDER, root_target="md", source=stack, target=stack)
+
+    # Post-process multilanguage titles (rename files, add aliases, update links)
+    # Export to md2 directory to preserve original files
+    output_md_dir = f"{context_dir}/md2"
+    postprocess_multilanguage_titles(context_dir, output_dir=output_md_dir)
 
 
 @flow
